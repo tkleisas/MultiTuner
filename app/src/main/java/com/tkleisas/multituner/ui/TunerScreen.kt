@@ -9,7 +9,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -832,6 +831,7 @@ private fun TuningInfo(state: TunerUiState) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TuningPickerDialog(
     current: Tuning,
@@ -845,9 +845,9 @@ private fun TuningPickerDialog(
         title = { Text("Choose tuning") },
         text = {
             Column {
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     InstrumentFamily.entries.forEach { item ->
                         FilterChip(
@@ -871,13 +871,11 @@ private fun TuningPickerDialog(
                             },
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Row(
-                                modifier = Modifier.padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         text = tuning.name,
+                                        modifier = Modifier.weight(1f),
                                         style = MaterialTheme.typography.titleMedium,
                                         color = if (selected) {
                                             MaterialTheme.colorScheme.onPrimaryContainer
@@ -885,20 +883,20 @@ private fun TuningPickerDialog(
                                             MaterialTheme.colorScheme.onSurface
                                         },
                                     )
-                                    if (tuning.description.isNotBlank()) {
-                                        Text(
-                                            text = tuning.description,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MutedText,
-                                        )
-                                    }
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = "${tuning.courseCount}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MutedText,
+                                    )
                                 }
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    text = "${tuning.courseCount}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MutedText,
-                                )
+                                if (tuning.description.isNotBlank()) {
+                                    Text(
+                                        text = tuning.description,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MutedText,
+                                    )
+                                }
                             }
                         }
                         Spacer(Modifier.height(4.dp))

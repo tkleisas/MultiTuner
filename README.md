@@ -90,8 +90,9 @@ strings" detection is not implemented.
 ## Requirements
 
 - Android 10 (API 29) or newer
+- Target Android 16 (API 36), as required by Google Play for new apps
 - JDK 17 or newer (CI uses Temurin 17)
-- Android SDK 35
+- Android SDK 36
 - Android NDK `27.2.12479018`
 - CMake `3.22.1`
 - Gradle wrapper `8.11.1` (downloaded automatically)
@@ -108,7 +109,7 @@ The app builds for `arm64-v8a`, `armeabi-v7a` and `x86_64`.
    ```properties
    sdk.dir=/path/to/Android/Sdk
    ```
-3. Install SDK 35, NDK `27.2.12479018` and CMake `3.22.1` when prompted.
+3. Install SDK 36, NDK `27.2.12479018` and CMake `3.22.1` when prompted.
 4. Sync Gradle and run the `app` configuration.
 
 ### Command line
@@ -118,7 +119,7 @@ export ANDROID_HOME="$HOME/Android/Sdk"
 export JAVA_HOME="/path/to/jdk-17"
 
 yes | sdkmanager --licenses
-sdkmanager "platforms;android-35" "build-tools;35.0.0" \
+sdkmanager "platforms;android-36" "build-tools;35.0.0" \
   "ndk;27.2.12479018" "cmake;3.22.1"
 
 ./gradlew assembleDebug
@@ -166,19 +167,23 @@ keyPassword=your-key-password
 `keystore.properties` and all `*.p12`, `*.jks` and `*.keystore` files are
 gitignored. Never commit them.
 
-Build and verify the signed APK:
+Build and verify the signed APK and Play Store bundle:
 
 ```bash
-./gradlew assembleRelease
+./gradlew assembleRelease bundleRelease
 
 "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify \
   --print-certs app/build/outputs/apk/release/app-release.apk
+
+"$JAVA_HOME/bin/jarsigner" -verify \
+  app/build/outputs/bundle/release/app-release.aab
 ```
 
-Output:
+Outputs:
 
 ```
 app/build/outputs/apk/release/app-release.apk
+app/build/outputs/bundle/release/app-release.aab
 ```
 
 > **Back up the keystore and its passwords.** If you distribute updates outside
@@ -227,11 +232,13 @@ The workflow is defined in
 - Pushes to `master`/`main` and pull requests run the native detector tests,
   Android lint and `assembleDebug`, then upload the debug APK as a workflow
   artifact.
-- Pushes of tags matching `v*` additionally decode the release keystore, build a
-  signed release APK, verify it with `apksigner` and publish it as a GitHub
-  release asset named `MultiTuner-vX.Y.Z.apk`.
-- The workflow uses Ubuntu 24.04, Temurin JDK 17, Android SDK 35, NDK
+- Pushes of tags matching `v*` additionally decode the release keystore, build
+  a signed APK and AAB, verify both, and publish them as GitHub release assets
+  named `MultiTuner-vX.Y.Z.apk` and `MultiTuner-vX.Y.Z.aab`.
+- The workflow uses Ubuntu 24.04, Temurin JDK 17, Android SDK 36, NDK
   `27.2.12479018` and CMake `3.22.1`.
+- Tag builds publish both `MultiTuner-vX.Y.Z.apk` and
+  `MultiTuner-vX.Y.Z.aab`. The AAB is the upload artifact for Google Play.
 
 ### Creating a release
 
@@ -240,12 +247,71 @@ The workflow is defined in
 3. Create and push an annotated tag:
 
    ```bash
-   git tag -a v0.0.4 -m "MultiTuner v0.0.4"
-   git push origin v0.0.4
+   git tag -a v0.0.5 -m "MultiTuner v0.0.5"
+   git push origin v0.0.5
    ```
 
-4. Watch the `Android CI` run in GitHub Actions. The signed APK appears on the
-   corresponding GitHub release.
+4. Watch the `Android CI` run in GitHub Actions. The signed APK and AAB appear
+   on the corresponding GitHub release.
+
+## Publishing to Google Play
+
+The current release targets Android 16 (API 36), which Google Play requires for
+new apps. The Play Store upload artifact is the signed AAB:
+
+```
+app/build/outputs/bundle/release/app-release.aab
+```
+
+Play Store preparation material is in [`store/`](store):
+
+- [`store/listing.md`](store/listing.md) - store listing copy, declarations and
+  reviewer instructions
+- [`store/icon-512.png`](store/icon-512.png) - app icon
+- [`store/feature-graphic-1024x500.png`](store/feature-graphic-1024x500.png) -
+  feature graphic
+- [`store/screenshots/`](store/screenshots) - phone and tablet screenshots
+- [`docs/privacy-policy.html`](docs/privacy-policy.html) - privacy policy
+  published at
+  <https://tkleisas.github.io/MultiTuner/privacy-policy.html>
+
+### Play Console setup
+
+1. Create or sign in to a Google Play Developer account and create a new app
+   with the package name `com.tkleisas.multituner`.
+2. Complete the store listing using `store/listing.md` and upload the icon,
+   feature graphic and screenshots.
+3. Complete **App content**: privacy policy, ads, app access, content rating,
+   target audience and Data safety.
+4. Upload the signed AAB to **Internal testing** first and test the Play-signed
+   build on a physical device.
+5. If this is a personal developer account created after November 13, 2023,
+   run a closed test with at least **12 testers opted in for 14 consecutive
+   days** before applying for production access.
+6. Run the pre-launch report, fix any issues, then apply for production access
+   and roll out.
+
+### Play App Signing
+
+New apps must use Play App Signing. The recommended setup is:
+
+- Let Google generate and manage the **app signing key**.
+- Register the existing `multituner` keystore as the **upload key**.
+
+Export the upload certificate for Play Console:
+
+```bash
+keytool -export -rfc \
+  -keystore ~/.android/keystores/multituner-release.p12 \
+  -alias multituner \
+  -file ~/.android/keystores/multituner-upload-cert.pem
+```
+
+Upload that `.pem` under **Release > Setup > App signing**.
+
+The Play Store build is re-signed by Google. GitHub release APKs are signed with
+the upload key, so a sideloaded APK cannot be upgraded in place by the Play
+Store version. Uninstall the sideloaded app before installing from Play.
 
 ## Project structure
 
@@ -260,7 +326,8 @@ The workflow is defined in
 │   │   └── ui/             # Compose screen, gauges, theme
 │   ├── src/main/cpp/       # YIN detector and JNI entry point
 │   └── build.gradle.kts
-├── docs/screenshots/
+├── docs/                   # GitHub Pages landing page, privacy policy, screenshots
+├── store/                  # Play Store listing copy and graphics
 ├── native-tests/           # Host-side DSP tests
 ├── .github/workflows/
 └── LICENSE
@@ -291,6 +358,8 @@ tone generator are excluded from release builds.
 
 MultiTuner does not request the `INTERNET` permission. Microphone audio is
 processed on-device in real time and is not stored, recorded or transmitted.
+The hosted privacy policy is at
+<https://tkleisas.github.io/MultiTuner/privacy-policy.html>.
 
 ## Roadmap
 
@@ -298,7 +367,6 @@ processed on-device in real time and is not stored, recorded or transmitted.
 - Microtonal/makam per-string offsets and alternate temperaments
 - More instruments and regional presets
 - Optional polyphonic string detection
-- Signed App Bundle for Play Store distribution
 
 ## Contributing
 

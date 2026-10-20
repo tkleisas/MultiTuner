@@ -21,15 +21,15 @@ val releaseStorePath = signingValue("RELEASE_KEYSTORE_PATH", "storeFile")
 
 android {
     namespace = "com.tkleisas.multituner"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "27.2.12479018"
 
     defaultConfig {
         applicationId = "com.tkleisas.multituner"
         minSdk = 29
-        targetSdk = 35
-        versionCode = 3
-        versionName = "0.0.3"
+        targetSdk = 36
+        versionCode = 4
+        versionName = "0.0.4"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")

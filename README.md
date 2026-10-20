@@ -50,6 +50,8 @@ bouzouki C-F-A-D. Bottom: the tuning picker and the tablet layout.
   and is never recorded or uploaded.
 - **Debug test tone** - debug builds include a `TONE` button for testing the
   complete audio path without an instrument. It is not present in release builds.
+- **16 KB page sizes** - the 64-bit native libraries are built with 16 KB
+  alignment for Android 15+ devices and Google Play compliance.
 
 ## Supported tunings
 
@@ -97,7 +99,8 @@ strings" detection is not implemented.
 - CMake `3.22.1`
 - Gradle wrapper `8.11.1` (downloaded automatically)
 
-The app builds for `arm64-v8a`, `armeabi-v7a` and `x86_64`.
+The app builds for `arm64-v8a`, `armeabi-v7a` and `x86_64`. The 64-bit
+libraries are linked with 16 KB page-size alignment.
 
 ## Build
 
@@ -131,12 +134,24 @@ The debug APK is written to:
 app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Run lint and the native detector tests:
+Run lint, the native detector tests and the 16 KB page-size check:
 
 ```bash
 ./gradlew lintDebug
 ./native-tests/run.sh
+
+./gradlew assembleRelease bundleRelease
+./scripts/check_16kb_page_size.sh \
+  app/build/outputs/apk/release/app-release.apk \
+  app/build/outputs/bundle/release/app-release.aab
 ```
+
+### 16 KB page sizes
+
+Android 15+ devices can use 16 KB memory pages, and Google Play requires apps
+targeting Android 15+ to support them. The NDK build sets
+`-Wl,-z,max-page-size=16384` for `arm64-v8a` and `x86_64`; the CI release job
+verifies both the APK and AAB before publishing.
 
 ## Release signing
 
@@ -239,6 +254,8 @@ The workflow is defined in
   `27.2.12479018` and CMake `3.22.1`.
 - Tag builds publish both `MultiTuner-vX.Y.Z.apk` and
   `MultiTuner-vX.Y.Z.aab`. The AAB is the upload artifact for Google Play.
+- Tag builds verify 16 KB page-size alignment for the 64-bit native libraries
+  before uploading the release assets.
 
 ### Creating a release
 
@@ -247,8 +264,8 @@ The workflow is defined in
 3. Create and push an annotated tag:
 
    ```bash
-   git tag -a v0.0.5 -m "MultiTuner v0.0.5"
-   git push origin v0.0.5
+   git tag -a v0.0.6 -m "MultiTuner v0.0.6"
+   git push origin v0.0.6
    ```
 
 4. Watch the `Android CI` run in GitHub Actions. The signed APK and AAB appear
@@ -329,6 +346,7 @@ Store version. Uninstall the sideloaded app before installing from Play.
 ├── docs/                   # GitHub Pages landing page, privacy policy, screenshots
 ├── store/                  # Play Store listing copy and graphics
 ├── native-tests/           # Host-side DSP tests
+├── scripts/                # Release verification (16 KB page sizes)
 ├── .github/workflows/
 └── LICENSE
 ```

@@ -104,6 +104,10 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "MultiTuner-${GITHUB_REF_NAME}.apk"
           "$JAVA_HOME/bin/jarsigner" -verify "MultiTuner-${GITHUB_REF_NAME}.aab" > /dev/null
 
+      - name: Verify 16 KB page size support
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: ./scripts/check_16kb_page_size.sh "MultiTuner-${GITHUB_REF_NAME}.apk" "MultiTuner-${GITHUB_REF_NAME}.aab"
+
       - name: Upload release artifacts
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4

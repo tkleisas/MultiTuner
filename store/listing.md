@@ -113,7 +113,7 @@ final result in Play Console.
 
 No test account or login is required.
 
-## Release notes for v0.0.4
+## Release notes for v0.0.5
 
 ```
 Initial Play Store release.
@@ -124,6 +124,7 @@ Initial Play Store release.
 - Needle, strobe and per-course visual feedback
 - A4 reference from 415 to 466 Hz
 - Phone and tablet layouts
+- 16 KB page size support for Android 15+ devices
 - Offline, no ads, no data collection
 ```
 
@@ -164,7 +165,7 @@ An **organization** account does not have this 12-tester requirement.
 - [ ] Set the privacy policy URL
 - [ ] Complete Ads, App access, Content rating, Target audience and Data safety
 - [ ] Confirm target API 36 is reported for the AAB
-- [ ] Upload `MultiTuner-v0.0.4.aab` to Internal testing first
+- [ ] Upload `MultiTuner-v0.0.5.aab` to Internal testing first
 - [ ] Test the Play-signed build on a physical device
 - [ ] Run the pre-launch report
 - [ ] Complete closed testing if required

@@ -153,6 +153,19 @@ targeting Android 15+ to support them. The NDK build sets
 `-Wl,-z,max-page-size=16384` for `arm64-v8a` and `x86_64`; the CI release job
 verifies both the APK and AAB before publishing.
 
+### Release optimization
+
+Release builds use:
+
+- `isMinifyEnabled = true`
+- `isShrinkResources = true`
+- `android.enableR8.fullMode=true`
+
+The R8 mapping file is written to
+`app/build/outputs/mapping/release/mapping.txt`, and the AAB embeds it for Play
+Console deobfuscation. JNI entry points are kept in
+[`app/proguard-rules.pro`](app/proguard-rules.pro).
+
 ## Release signing
 
 Release builds are signed when either `keystore.properties` (local development)
@@ -264,8 +277,8 @@ The workflow is defined in
 3. Create and push an annotated tag:
 
    ```bash
-   git tag -a v0.0.6 -m "MultiTuner v0.0.6"
-   git push origin v0.0.6
+   git tag -a v0.0.7 -m "MultiTuner v0.0.7"
+   git push origin v0.0.7
    ```
 
 4. Watch the `Android CI` run in GitHub Actions. The signed APK and AAB appear

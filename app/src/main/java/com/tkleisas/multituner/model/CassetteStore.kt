@@ -63,6 +63,8 @@ class CassetteStore(context: Context) {
                 deckObject.put("soloed", deck.soloed)
                 deckObject.put("reverbSend", deck.reverbSend.toDouble())
                 deckObject.put("delaySend", deck.delaySend.toDouble())
+                deckObject.put("busSend", deck.busSend.toDouble())
+                deckObject.put("recordSource", deck.recordSource.name)
                 decks.put(deckObject)
             }
             objectValue.put("decks", decks)
@@ -154,6 +156,14 @@ class CassetteStore(context: Context) {
                         soloed = deckObject.optBoolean("soloed", false),
                         reverbSend = deckObject.optDouble("reverbSend", 0.0).toFloat(),
                         delaySend = deckObject.optDouble("delaySend", 0.0).toFloat(),
+                        busSend = deckObject.optDouble("busSend", 0.0).toFloat(),
+                        recordSource = CassetteRecordSource.fromName(
+                            if (deckObject.has("recordSource")) {
+                                deckObject.getString("recordSource")
+                            } else {
+                                null
+                            },
+                        ),
                     ),
                 )
             }

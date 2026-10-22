@@ -59,6 +59,26 @@ class CassetteTest {
     }
 
     @Test
+    fun deckRecordingDefaultsToMicrophone() {
+        val deck = CassetteDeck()
+
+        assertEquals(CassetteRecordSource.MIC, deck.recordSource)
+        assertEquals(0f, deck.busSend)
+    }
+
+    @Test
+    fun recordSourceNamesRoundTrip() {
+        assertEquals(
+            CassetteRecordSource.DRUMS,
+            CassetteRecordSource.fromName("DRUMS"),
+        )
+        assertEquals(
+            CassetteRecordSource.MIC,
+            CassetteRecordSource.fromName("unknown"),
+        )
+    }
+
+    @Test
     fun paletteWrapsInBothDirections() {
         assertEquals(CassetteColors.palette[0], CassetteColors.default(0))
         assertEquals(CassetteColors.palette[1], CassetteColors.default(1))

@@ -132,6 +132,12 @@ internal class MetronomeAudioEngine : AutoCloseable {
         }
     }
 
+    fun setDeckBusSend(deck: Int, send: Float) {
+        if (handle != 0L) {
+            MetronomeNative.nativeSetDeckBusSend(handle, deck, send)
+        }
+    }
+
     fun setCassetteVolume(volume: Float) {
         if (handle != 0L) MetronomeNative.nativeSetCassetteVolume(handle, volume)
     }
@@ -174,6 +180,24 @@ internal class MetronomeAudioEngine : AutoCloseable {
 
     fun cassettePeakLevel(): Float =
         if (handle != 0L) MetronomeNative.nativeCassettePeakLevel(handle) else 0.0f
+
+    fun startInternalRecording(source: Int, path: String): Boolean =
+        handle != 0L && MetronomeNative.nativeStartInternalRecording(
+            handle, source, path,
+        )
+
+    fun stopInternalRecording(source: Int) {
+        if (handle != 0L) MetronomeNative.nativeStopInternalRecording(handle, source)
+    }
+
+    fun isInternalRecording(source: Int): Boolean =
+        handle != 0L && MetronomeNative.nativeIsInternalRecording(handle, source)
+
+    fun internalPeakLevel(source: Int): Float =
+        if (handle != 0L) MetronomeNative.nativeInternalPeakLevel(handle, source) else 0.0f
+
+    fun internalRecordingFailed(source: Int): Boolean =
+        handle != 0L && MetronomeNative.nativeInternalRecordingFailed(handle, source)
 
     fun currentBeat(): Int =
         if (handle != 0L) MetronomeNative.nativeCurrentBeat(handle) else 0

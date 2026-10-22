@@ -1,6 +1,6 @@
 # MultiTuner — Product Design and Roadmap
 
-Status: living document. v0.7.1 cassette transport and shell refined.
+Status: living document. v0.8.0 multi-source cassette recording and side flip.
 
 ## Vision
 
@@ -99,33 +99,30 @@ labels. Verified makam/maqam presets can be added without code changes.
 This emulates a Yamaha MT-50-style **full-width 4-track cassette**, not a
 standard 2×2 stereo cassette.
 
-- One cassette = **4 mono tracks**, full tape width, up to **15 minutes**
+- One cassette = **4 mono tracks**, full tape width, exactly **10 minutes**
 - One direction records all four tracks; there is no independent Side B audio
-- The physical cassette has two sides, but flipping runs the same tape backwards
-- Flipping reverses track order: 1↔4 and 2↔3
-- Tape position maps as `t → 15:00 − t`
-- Storage: 4 × 15 min mono at 48 kHz/16-bit ≈ **346 MB per cassette**
+- Every track is a preallocated, zero-filled 10:00 WAV
+- Side B is the same tape buffer-reversed and with track order swapped 1↔4, 2↔3
+- Storage: 4 × 10 min mono at 48 kHz/16-bit ≈ **230 MB per cassette**
 - Recording only in the forward direction in v1; reverse recording later
 
 ### Flip and routing
 
 When flipped:
 
-- All four tracks play in reverse
+- Each full track file is sample-reversed and the track order is swapped
+- Playback, reels and the tape counter remain forward, starting at 0:00
 - Deck strips display 4, 3, 2, 1
 - Stored files route: 1 → deck 4, 2 → deck 3, 3 → deck 2, 4 → deck 1
-- Pan, volume, mute and solo follow the **deck track strips**, matching a
-  physically flipped tape
-- Reels turn backwards and the tape counter runs down
-- Varispeed remains active
-- Tape emulation remains active
-- Metronome and drums mute
+- Pan, volume, mute and solo follow the **deck track strips**
+- Varispeed and tape emulation remain active
+- Metronome and drums are unaffected
 - Recording is disabled while flipped in v1
-- Flipping back restores original routing and strip order
+- Flipping back restores the original audio, routing and strip order
 
 ### Cassette UI
 
-Shipped through 0.7.1:
+Shipped through 0.8.0:
 
 - Cassette library with create, select and delete; rename/duplicate are planned
 - User-selectable cassette shell colors
@@ -252,6 +249,7 @@ Planned:
 | **0.4.0** | Shipped: full-width 4-track cassette recorder, REW/FF, record gain and meters, flip/reverse, pan, playback varispeed 0.5×–2×, cassette-bus tape emulation |
 | **0.7.0** | Shipped: per-deck reverb/delay sends, master FX returns, stereo WAV/OGG export and Android sharing |
 | **0.7.1** | Shipped: realistic cassette shell, variable tape packs, hold-to-wind and tape start/end controls |
+| **0.8.0** | Shipped: simultaneous MIC/CLICK/DRUMS/BUS recording, BUS sends, punch-in overwrite, 10-minute preallocated tape and full-buffer side flip |
 | **Next** | Record varispeed, per-track tape, foreground recording, export presets, library polish |
 
 ## 11. Decisions locked
@@ -261,8 +259,8 @@ Planned:
 - Microtonal per-string offsets now; full temperaments later.
 - Oboe for the shared audio engine.
 - Drums use yawn's synthesized and sample-based drum work.
-- Cassette: one full-width 4-track program, 15 minutes; flipping plays the same
-  tape backwards with physical deck-strip routing. No independent Side B audio.
+- Cassette: one full-width 4-track program, 10 minutes; flipping reverses every
+  full track buffer and swaps deck routing. No independent Side B audio.
 - Varispeed: 0.5×–2.0×, playback-only through 0.7.1.
 - Tape: cassette bus first, off by default, master/per-track later.
 - FX: two shared stereo aux buses, per-deck sends, returns before tape.

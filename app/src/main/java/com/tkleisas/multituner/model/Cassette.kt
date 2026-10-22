@@ -5,6 +5,18 @@ data class CassetteAudioTrack(
     val startSample: Long = 0L,
 )
 
+enum class CassetteRecordSource(val nativeCode: Int, val label: String) {
+    MIC(0, "MIC"),
+    METRONOME(1, "CLICK"),
+    DRUMS(2, "DRUMS"),
+    BUS(3, "BUS");
+
+    companion object {
+        fun fromName(name: String?): CassetteRecordSource =
+            entries.firstOrNull { it.name == name } ?: MIC
+    }
+}
+
 data class CassetteDeck(
     val gain: Float = 0.8f,
     val pan: Float = 0f,
@@ -12,6 +24,8 @@ data class CassetteDeck(
     val soloed: Boolean = false,
     val reverbSend: Float = 0f,
     val delaySend: Float = 0f,
+    val busSend: Float = 0f,
+    val recordSource: CassetteRecordSource = CassetteRecordSource.MIC,
 )
 
 data class Cassette(
@@ -46,6 +60,9 @@ data class Cassette(
 
     companion object {
         const val TRACKS = 4
+        const val SAMPLE_RATE = 48_000
+        const val TAPE_SECONDS = 600L
+        const val TAPE_FRAMES = TAPE_SECONDS * SAMPLE_RATE
 
         fun empty(id: String, name: String, color: Long): Cassette = Cassette(
             id = id,

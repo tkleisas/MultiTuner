@@ -15,9 +15,13 @@ import com.tkleisas.multituner.model.Cassette
 import com.tkleisas.multituner.model.CassetteAudioTrack
 import com.tkleisas.multituner.model.CassetteDeck
 import com.tkleisas.multituner.model.CassetteExportFormat
+import com.tkleisas.multituner.model.CassetteFlipper
 import com.tkleisas.multituner.model.CassetteLibrary
+import com.tkleisas.multituner.model.CassetteRecordSource
 import com.tkleisas.multituner.model.CassetteMixdown
+import com.tkleisas.multituner.model.CassettePreallocator
 import com.tkleisas.multituner.model.CassetteStore
+import com.tkleisas.multituner.model.CassetteTrackMerger
 import com.tkleisas.multituner.model.DrumPattern
 import com.tkleisas.multituner.model.DrumPatterns
 import com.tkleisas.multituner.tuner.TapTempo
@@ -44,8 +48,8 @@ data class CassetteUiState(
     val playing: Boolean = false,
     val recording: Boolean = false,
     val winding: Boolean = false,
-    val recordingTrack: Int? = null,
-    val armedTrack: Int? = null,
+    val recordingTracks: Set<Int> = emptySet(),
+    val armedTracks: Set<Int> = emptySet(),
     val positionSamples: Long = 0L,
     val varispeed: Float = 1.0f,
     val recordLevel: Float = 1.0f,
@@ -53,6 +57,8 @@ data class CassetteUiState(
     val outputLevel: Float = 0.0f,
     val inputClipping: Boolean = false,
     val flipped: Boolean = false,
+    val tapePreparing: Boolean = false,
+    val flipping: Boolean = false,
     val tapeEnabled: Boolean = false,
     val tapeDrive: Float = 0.3f,
     val tapeTone: Float = 0.8f,
@@ -106,10 +112,17 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private var engine: MetronomeAudioEngine? = null
     private var windJob: Job? = null
 
+    private data class PendingTake(
+        val deck: Int,
+        val source: CassetteRecordSource,
+        val finalFile: File,
+        val tempFile: File,
+    )
+
     private var recordStartSample = 0L
-    private var recordingFinalFile: File? = null
-    private var recordingTempFile: File? = null
-    private var recordingDeck = -1
+    private var recordingTakes: List<PendingTake> = emptyList()
+    private var recordingMicDeck: Int? = null
+    private var recordingInternalSources: Set<Int> = emptySet()
     private var recordingCassetteId: String? = null
 
     private val initialPattern = prefs.getString(KEY_DRUM_PATTERN, null)
@@ -135,7 +148,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 library = cassetteLibrary,
                 varispeed = prefs.getFloat(KEY_VARISPEED, 1.0f).coerceIn(0.5f, 2.0f),
                 recordLevel = prefs.getFloat(KEY_RECORD_LEVEL, 1.0f).coerceIn(0.0f, 2.0f),
-                flipped = prefs.getBoolean(KEY_FLIP, false),
+                flipped = prefs.getBoolean(KEY_SIDE_B, false),
                 tapeEnabled = prefs.getBoolean(KEY_TAPE_ENABLED, false),
                 tapeDrive = prefs.getFloat(KEY_TAPE_DRIVE, 0.3f).coerceIn(0.0f, 1.0f),
                 tapeTone = prefs.getFloat(KEY_TAPE_TONE, 0.8f).coerceIn(0.0f, 1.0f),
@@ -164,7 +177,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 val state = _uiState.value
                 val audio = engine
                 val anyPlaying = state.metronomePlaying ||
-                    state.drumsPlaying || state.cassette.playing
+                    state.drumsPlaying || state.cassette.playing ||
+                    state.cassette.recording
                 if (anyPlaying && audio != null) {
                     if (!audio.isReady ||
                         (!audio.isMetronomePlaying() && !audio.isDrumsPlaying() &&
@@ -182,7 +196,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                                 cassette = it.cassette.copy(
                                     playing = false,
                                     recording = false,
-                                    recordingTrack = null,
+                                    recordingTracks = emptySet(),
                                     positionSamples = 0,
                                 ),
                                 sampleRate = 0,
@@ -190,6 +204,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                             )
                         }
                     } else {
+                        val cassetteActive = state.cassette.playing ||
+                            state.cassette.recording
                         val position = audio.positionSamples()
                         val sampleRate = if (state.sampleRate > 0) {
                             state.sampleRate
@@ -197,9 +213,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                             audio.sampleRate()
                         }
                         val tapeEnd = sampleRate.toLong() * CASSETTE_SECONDS
-                        val cassetteEnded = state.cassette.playing &&
-                            sampleRate > 0 && position >= tapeEnd
+                        val cassetteEnded = cassetteActive && sampleRate > 0 &&
+                            position >= tapeEnd
                         if (cassetteEnded) {
+                            if (state.cassette.recording) finishRecording()
                             audio.setCassettePlaying(false)
                             if (!state.metronomePlaying && !state.drumsPlaying) {
                                 audio.setPositionSamples(0)
@@ -208,23 +225,82 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                         val resetPosition = cassetteEnded &&
                             !state.metronomePlaying && !state.drumsPlaying
                         _uiState.update {
+                            val cassette = if (cassetteActive) {
+                                it.cassette.copy(
+                                    playing = if (cassetteEnded) {
+                                        false
+                                    } else {
+                                        it.cassette.playing
+                                    },
+                                    positionSamples = if (resetPosition) {
+                                        0
+                                    } else {
+                                        position
+                                    },
+                                )
+                            } else {
+                                it.cassette
+                            }
                             it.copy(
                                 currentBeat = audio.currentBeat(),
                                 beatPhase = audio.beatPhase(),
                                 currentDrumStep = audio.currentDrumStep(),
-                                cassette = it.cassette.copy(
-                                    playing = if (cassetteEnded) false else it.cassette.playing,
-                                    positionSamples = if (resetPosition) 0 else position,
-                                ),
+                                cassette = cassette,
                             )
                         }
                     }
                 }
-                if (state.cassette.recording && !recorder.isRecording) {
+                if (state.cassette.recording && recordingComplete()) {
                     finishRecording()
                 }
                 updateMeters()
                 delay(POLL_INTERVAL_MS)
+            }
+        }
+        prepareSelectedTape()
+    }
+
+    private fun prepareSelectedTape() {
+        if (_uiState.value.cassette.tapePreparing || _uiState.value.cassette.flipping) return
+        val cassette = cassetteLibrary.selected
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(tapePreparing = true))
+        }
+        viewModelScope.launch {
+            val prepared = withContext(Dispatchers.IO) {
+                CassettePreallocator.prepare(cassette, cassetteStore)
+            }
+            if (prepared == null) {
+                _uiState.update {
+                    it.copy(
+                        cassette = it.cassette.copy(tapePreparing = false),
+                        error = "Could not prepare the tape files",
+                    )
+                }
+                return@launch
+            }
+
+            val current = cassetteLibrary.cassettes
+                .firstOrNull { it.id == cassette.id }
+            if (current == null) {
+                _uiState.update {
+                    it.copy(cassette = it.cassette.copy(tapePreparing = false))
+                }
+                return@launch
+            }
+            val updated = current.copy(audioTracks = prepared.audioTracks)
+            cassetteLibrary = cassetteStore.update(cassetteLibrary, updated)
+            _uiState.update {
+                it.copy(
+                    cassette = it.cassette.copy(
+                        library = cassetteLibrary,
+                        tapePreparing = false,
+                    ),
+                    error = null,
+                )
+            }
+            if (cassetteLibrary.selectedId == updated.id) {
+                engine?.let { loadCassetteTracks(it, updated) }
             }
         }
     }
@@ -371,15 +447,15 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun selectCassette(id: String) {
         val state = _uiState.value
-        if (state.cassette.recording) return
+        if (state.cassette.recording || state.cassette.tapePreparing || state.cassette.flipping) return
         if (state.cassette.playing) engine?.setCassettePlaying(false)
         cassetteLibrary = cassetteStore.select(cassetteLibrary, id)
         val next = state.cassette.copy(
             library = cassetteLibrary,
             playing = false,
             recording = false,
-            recordingTrack = null,
-            armedTrack = null,
+            recordingTracks = emptySet(),
+            armedTracks = emptySet(),
             positionSamples = 0,
         )
         _uiState.update { it.copy(cassette = next) }
@@ -388,19 +464,20 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             loadCassetteTracks(it, cassetteLibrary.selected)
             applyDeckSettings(it, cassetteLibrary.selected)
         }
+        prepareSelectedTape()
     }
 
     fun createCassette() {
         val state = _uiState.value
-        if (state.cassette.recording) return
+        if (state.cassette.recording || state.cassette.tapePreparing || state.cassette.flipping) return
         if (state.cassette.playing) engine?.setCassettePlaying(false)
         cassetteLibrary = cassetteStore.create(cassetteLibrary)
         val next = state.cassette.copy(
             library = cassetteLibrary,
             playing = false,
             recording = false,
-            recordingTrack = null,
-            armedTrack = null,
+            recordingTracks = emptySet(),
+            armedTracks = emptySet(),
             positionSamples = 0,
         )
         _uiState.update { it.copy(cassette = next) }
@@ -409,19 +486,20 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             loadCassetteTracks(it, cassetteLibrary.selected)
             applyDeckSettings(it, cassetteLibrary.selected)
         }
+        prepareSelectedTape()
     }
 
     fun deleteCassette(id: String) {
         val state = _uiState.value
-        if (state.cassette.recording) return
+        if (state.cassette.recording || state.cassette.tapePreparing || state.cassette.flipping) return
         if (state.cassette.playing) engine?.setCassettePlaying(false)
         cassetteLibrary = cassetteStore.delete(cassetteLibrary, id)
         val next = state.cassette.copy(
             library = cassetteLibrary,
             playing = false,
             recording = false,
-            recordingTrack = null,
-            armedTrack = null,
+            recordingTracks = emptySet(),
+            armedTracks = emptySet(),
             positionSamples = 0,
         )
         _uiState.update { it.copy(cassette = next) }
@@ -430,6 +508,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             loadCassetteTracks(it, cassetteLibrary.selected)
             applyDeckSettings(it, cassetteLibrary.selected)
         }
+        prepareSelectedTape()
     }
 
     fun setCassetteColor(color: Long) {
@@ -448,9 +527,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         ) {
             return
         }
-        val newArmed = if (state.cassette.armedTrack == index) null else index
+        val armed = state.cassette.armedTracks
+        val newArmed = if (index in armed) armed - index else armed + index
         _uiState.update {
-            it.copy(cassette = it.cassette.copy(armedTrack = newArmed))
+            it.copy(cassette = it.cassette.copy(armedTracks = newArmed))
         }
     }
 
@@ -476,8 +556,21 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         engine?.setDeckDelaySend(index, clamped)
     }
 
+    fun setDeckBusSend(index: Int, send: Float) {
+        val clamped = send.coerceIn(0.0f, 1.0f)
+        updateDeck(index) { it.copy(busSend = clamped) }
+        engine?.setDeckBusSend(index, clamped)
+    }
+
+    fun setDeckRecordSource(index: Int, source: CassetteRecordSource) {
+        if (_uiState.value.cassette.recording) return
+        updateDeck(index) { it.copy(recordSource = source) }
+    }
+
     fun toggleDeckMute(index: Int) {
-        val deck = _uiState.value.cassette.cassette.decks.getOrNull(index) ?: return
+        val cassetteState = _uiState.value.cassette
+        if (cassetteState.recording && index in cassetteState.recordingTracks) return
+        val deck = cassetteState.cassette.decks.getOrNull(index) ?: return
         updateDeck(index) { it.copy(muted = !deck.muted) }
         engine?.setDeckMute(index, !deck.muted)
     }
@@ -501,18 +594,67 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun toggleFlip() {
         val state = _uiState.value
-        if (state.cassette.recording) return
-        val flipped = !state.cassette.flipped
-        prefs.edit().putBoolean(KEY_FLIP, flipped).apply()
+        if (state.cassette.recording || state.cassette.tapePreparing ||
+            state.cassette.flipping
+        ) {
+            return
+        }
+        if (state.cassette.winding) endWind()
+
+        engine?.setCassettePlaying(false)
+        val cassette = state.cassette.cassette
+        val flippingToSideB = !state.cassette.flipped
         _uiState.update {
             it.copy(
                 cassette = it.cassette.copy(
-                    flipped = flipped,
-                    armedTrack = if (flipped) null else it.cassette.armedTrack,
+                    playing = false,
+                    flipping = true,
+                    winding = false,
+                    positionSamples = 0,
                 ),
+                error = null,
             )
         }
-        engine?.setFlip(flipped)
+        viewModelScope.launch {
+            val transformed = withContext(Dispatchers.IO) {
+                CassetteFlipper.flip(cassette)
+            }
+            if (transformed == null) {
+                _uiState.update {
+                    it.copy(
+                        cassette = it.cassette.copy(flipping = false),
+                        error = "Could not flip the cassette",
+                    )
+                }
+                return@launch
+            }
+
+            val current = cassetteLibrary.cassettes
+                .firstOrNull { it.id == cassette.id }
+                ?: cassette
+            val updated = current.copy(audioTracks = transformed.audioTracks)
+            cassetteLibrary = cassetteStore.update(cassetteLibrary, updated)
+            prefs.edit().putBoolean(KEY_SIDE_B, flippingToSideB).apply()
+            val next = _uiState.value.cassette.copy(
+                library = cassetteLibrary,
+                flipped = flippingToSideB,
+                playing = false,
+                recording = false,
+                recordingTracks = emptySet(),
+                armedTracks = emptySet(),
+                positionSamples = 0,
+                winding = false,
+                flipping = false,
+            )
+            _uiState.update {
+                it.copy(cassette = next, error = null)
+            }
+            engine?.let {
+                applyCassetteParameters(it, next)
+                loadCassetteTracks(it, next.cassette)
+                applyDeckSettings(it, next.cassette)
+            }
+        }
     }
 
     fun setTapeEnabled(enabled: Boolean) {
@@ -651,7 +793,11 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun exportCassette(format: CassetteExportFormat) {
         val state = _uiState.value
-        if (state.cassette.exporting || state.cassette.recording) return
+        if (state.cassette.exporting || state.cassette.recording ||
+            state.cassette.tapePreparing || state.cassette.flipping
+        ) {
+            return
+        }
         if (format == CassetteExportFormat.OGG &&
             (Build.VERSION.SDK_INT < Build.VERSION_CODES.R ||
                 !OggOpusEncoder.isAvailable())
@@ -836,7 +982,11 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     fun beginWind(direction: Int) {
         if (direction == 0) return
         val state = _uiState.value
-        if (state.cassette.recording || windJob != null) return
+        if (state.cassette.recording || state.cassette.tapePreparing || state.cassette.flipping ||
+            windJob != null
+        ) {
+            return
+        }
 
         engine?.setCassetteVolume(0f)
         _uiState.update {
@@ -866,13 +1016,17 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun windToStart() {
-        if (_uiState.value.cassette.recording) return
+        if (_uiState.value.cassette.recording ||
+            _uiState.value.cassette.tapePreparing || _uiState.value.cassette.flipping
+        ) {
+            return
+        }
         seekCassetteTo(0L)
     }
 
     fun windToEnd() {
         val state = _uiState.value
-        if (state.cassette.recording) return
+        if (state.cassette.recording || state.cassette.tapePreparing || state.cassette.flipping) return
         val sampleRate = state.sampleRate.takeIf { it > 0 }
             ?: engine?.sampleRate()
             ?: 48000
@@ -881,7 +1035,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     private fun seekCassetteTo(position: Long) {
         val state = _uiState.value
-        if (state.cassette.recording) return
+        if (state.cassette.recording || state.cassette.tapePreparing || state.cassette.flipping) return
 
         val audio = engine
         val sampleRate = state.sampleRate.takeIf { it > 0 }
@@ -902,7 +1056,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     private fun windCassette(seconds: Double) {
         val state = _uiState.value
-        if (state.cassette.recording) return
+        if (state.cassette.recording || state.cassette.tapePreparing || state.cassette.flipping) return
 
         val audio = engine
         val sampleRate = state.sampleRate.takeIf { it > 0 }
@@ -913,7 +1067,11 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         val tapeEnd = sampleRate.toLong() * CASSETTE_SECONDS
         val varispeed = state.cassette.varispeed.coerceAtLeast(0.5f)
         val delta = (seconds * sampleRate / varispeed).roundToLong()
-        val base = audio?.positionSamples() ?: state.cassette.positionSamples
+        val base = if (state.cassette.playing || state.cassette.recording) {
+            audio?.positionSamples() ?: state.cassette.positionSamples
+        } else {
+            state.cassette.positionSamples
+        }
         val next = (base + delta).coerceIn(0L, tapeEnd)
         if (next == base) return
         audio?.setPositionSamples(next)
@@ -927,6 +1085,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun toggleCassettePlay() {
         val state = _uiState.value
+        if (state.cassette.tapePreparing || state.cassette.flipping) return
         if (state.cassette.recording) {
             finishRecording()
             engine?.setCassettePlaying(false)
@@ -936,9 +1095,16 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             return
         }
         if (state.cassette.playing) {
+            val position = engine?.positionSamples()
+                ?: state.cassette.positionSamples
             engine?.setCassettePlaying(false)
             _uiState.update {
-                it.copy(cassette = it.cassette.copy(playing = false))
+                it.copy(
+                    cassette = it.cassette.copy(
+                        playing = false,
+                        positionSamples = position,
+                    ),
+                )
             }
             return
         }
@@ -952,7 +1118,6 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         } else {
             state.cassette.positionSamples.coerceIn(0L, tapeEnd)
         }
-        val transportWasPlaying = audio.isPlaying()
 
         applyPerformanceSettings(audio, state)
         applyCassetteParameters(audio, state.cassette)
@@ -961,9 +1126,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             _uiState.update { it.copy(error = "Could not start cassette playback") }
             return
         }
-        if (!transportWasPlaying || atEnd) {
-            audio.setPositionSamples(resumePosition)
-        }
+        audio.setPositionSamples(resumePosition)
         _uiState.update {
             it.copy(
                 cassette = it.cassette.copy(
@@ -976,12 +1139,60 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun stopAll() {
+        endWind()
+        if (_uiState.value.cassette.recording) finishRecording()
+        val state = _uiState.value
+        val cassetteActive = state.cassette.playing || state.cassette.recording
+        val position = if (cassetteActive) {
+            engine?.positionSamples() ?: state.cassette.positionSamples
+        } else {
+            state.cassette.positionSamples
+        }
+        engine?.setMetronomePlaying(false)
+        engine?.setDrumsPlaying(false)
+        engine?.setCassettePlaying(false)
+        _uiState.update {
+            it.copy(
+                metronomePlaying = false,
+                drumsPlaying = false,
+                currentBeat = 0,
+                beatPhase = 0.0f,
+                currentDrumStep = 0,
+                cassette = it.cassette.copy(
+                    playing = false,
+                    winding = false,
+                    positionSamples = position,
+                ),
+            )
+        }
+    }
+
+    fun stopCassette() {
+        val state = _uiState.value
+        if (state.cassette.recording) finishRecording()
+        val position = engine?.positionSamples()
+            ?: _uiState.value.cassette.positionSamples
+        engine?.setCassettePlaying(false)
+        _uiState.update {
+            it.copy(
+                cassette = it.cassette.copy(
+                    playing = false,
+                    positionSamples = position,
+                ),
+            )
+        }
+    }
+
     fun toggleRecord() {
         val state = _uiState.value
+        if (state.cassette.tapePreparing || state.cassette.flipping) return
         if (state.cassette.recording) {
             finishRecording()
             return
         }
+
+        if (state.cassette.winding) endWind()
 
         if (state.cassette.flipped) {
             _uiState.update {
@@ -990,10 +1201,37 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        val armed = state.cassette.armedTrack
-        if (armed == null) {
+        val armed = state.cassette.armedTracks
+        if (armed.isEmpty()) {
             _uiState.update {
-                it.copy(error = "Arm a track before recording")
+                it.copy(error = "Arm at least one track before recording")
+            }
+            return
+        }
+
+        val cassette = state.cassette.cassette
+        val takes = armed.sorted().map { deck ->
+            val finalFile = cassetteStore.trackFile(cassette, deck)
+            PendingTake(
+                deck = deck,
+                source = cassette.decks[deck].recordSource,
+                finalFile = finalFile,
+                tempFile = File(finalFile.parentFile, finalFile.name + ".rec"),
+            )
+        }
+        val micTakes = takes.filter { it.source == CassetteRecordSource.MIC }
+        if (micTakes.size > 1) {
+            _uiState.update {
+                it.copy(error = "Only one track can record from the microphone")
+            }
+            return
+        }
+        val internalTakes = takes.filter { it.source != CassetteRecordSource.MIC }
+        if (internalTakes.map { it.source }.distinct().size != internalTakes.size) {
+            _uiState.update {
+                it.copy(
+                    error = "Each internal source can only be recorded to one track",
+                )
             }
             return
         }
@@ -1004,14 +1242,17 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
         val sampleRate = audio.sampleRate()
         val tapeEnd = sampleRate.toLong() * CASSETTE_SECONDS
-        val atEnd = tapeEnd > 0 && state.cassette.positionSamples >= tapeEnd
-        val resumePosition = if (atEnd) {
+        val tapePosition = if (state.cassette.playing) {
+            audio.positionSamples()
+        } else {
+            state.cassette.positionSamples
+        }
+        val atEnd = tapeEnd > 0 && tapePosition >= tapeEnd
+        val startPosition = if (atEnd) {
             0L
         } else {
-            state.cassette.positionSamples.coerceIn(0L, tapeEnd)
+            tapePosition.coerceIn(0L, tapeEnd)
         }
-        val transportWasPlaying = audio.isPlaying()
-        val alreadyPlaying = audio.isCassettePlaying()
 
         if (state.cassette.varispeed != 1.0f) {
             prefs.edit().putFloat(KEY_VARISPEED, 1.0f).apply()
@@ -1021,55 +1262,75 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             audio.setVarispeed(1.0f)
         }
 
-        val cassette = state.cassette.cassette
-        val finalFile = cassetteStore.trackFile(cassette, armed)
-        val tempFile = File(finalFile.parentFile, finalFile.name + ".rec")
-        recorder.setInputGain(state.cassette.recordLevel)
+        val previousMutes = takes.associate { take ->
+            take.deck to cassette.decks[take.deck].muted
+        }
+        takes.forEach { audio.setDeckMute(it.deck, true) }
 
-        if (!recorder.start(tempFile)) {
-            tempFile.delete()
-            _uiState.update {
-                it.copy(error = recorder.error ?: "Could not start recording")
+        fun abortStart(internal: List<Int>, micStarted: Boolean) {
+            if (micStarted) recorder.stop()
+            internal.forEach { audio.stopInternalRecording(it) }
+            takes.forEach { it.tempFile.delete() }
+            previousMutes.forEach { (deck, muted) ->
+                audio.setDeckMute(deck, muted)
             }
-            return
         }
 
-        val startSample: Long
-        if (!alreadyPlaying) {
-            audio.setCassettePlaying(true)
-            if (!audio.isCassettePlaying()) {
-                recorder.stop()
-                tempFile.delete()
+        var micStarted = false
+        if (micTakes.isNotEmpty()) {
+            recorder.setInputGain(state.cassette.recordLevel)
+            if (!recorder.start(micTakes.first().tempFile)) {
+                takes.forEach { it.tempFile.delete() }
+                previousMutes.forEach { (deck, muted) ->
+                    audio.setDeckMute(deck, muted)
+                }
                 _uiState.update {
-                    it.copy(error = "Could not start cassette playback")
+                    it.copy(error = recorder.error ?: "Could not start recording")
                 }
                 return
             }
-            if (!transportWasPlaying || atEnd) {
-                audio.setPositionSamples(resumePosition)
-                startSample = resumePosition
-            } else {
-                startSample = audio.positionSamples()
-            }
-        } else {
-            if (atEnd) audio.setPositionSamples(0L)
-            startSample = if (atEnd) 0L else audio.positionSamples()
+            micStarted = true
         }
 
-        recordingDeck = armed
+        val startedInternal = mutableListOf<Int>()
+        for (take in internalTakes) {
+            if (!audio.startInternalRecording(
+                    take.source.nativeCode,
+                    take.tempFile.absolutePath,
+                )
+            ) {
+                abortStart(startedInternal, micStarted)
+                _uiState.update {
+                    it.copy(error = "Could not start ${take.source.label} recording")
+                }
+                return
+            }
+            startedInternal += take.source.nativeCode
+        }
+
+        audio.setCassettePlaying(true)
+        if (!audio.isCassettePlaying()) {
+            abortStart(startedInternal, micStarted)
+            _uiState.update {
+                it.copy(error = "Could not start cassette playback")
+            }
+            return
+        }
+        audio.setPositionSamples(startPosition)
+
+        recordingTakes = takes
+        recordingMicDeck = micTakes.firstOrNull()?.deck
+        recordingInternalSources = startedInternal.toSet()
         recordingCassetteId = cassette.id
-        recordingFinalFile = finalFile
-        recordingTempFile = tempFile
-        recordStartSample = startSample
-        audio.setDeckMute(armed, true)
+        recordStartSample = startPosition
 
         _uiState.update {
             it.copy(
                 cassette = it.cassette.copy(
                     playing = true,
                     recording = true,
-                    recordingTrack = armed,
-                    positionSamples = startSample,
+                    recordingTracks = takes.map { take -> take.deck }.toSet(),
+                    positionSamples = startPosition,
                     varispeed = 1.0f,
                 ),
                 sampleRate = audio.sampleRate(),
@@ -1097,7 +1358,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     playing = false,
                     recording = false,
                     winding = false,
-                    recordingTrack = null,
+                    recordingTracks = emptySet(),
                     positionSamples = 0,
                 ),
                 sampleRate = 0,
@@ -1107,6 +1368,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     override fun onCleared() {
         windJob?.cancel()
+        if (_uiState.value.cassette.recording) finishRecording()
         recorder.stop()
         engine?.close()
         engine = null
@@ -1122,7 +1384,18 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        val inputTarget = if (state.recording) recorder.peakLevel else 0.0f
+        val internalPeak = if (state.recording && recordingInternalSources.isNotEmpty()) {
+            recordingInternalSources.maxOfOrNull { source ->
+                engine?.internalPeakLevel(source) ?: 0.0f
+            } ?: 0.0f
+        } else {
+            0.0f
+        }
+        val inputTarget = if (state.recording) {
+            max(recorder.peakLevel, internalPeak)
+        } else {
+            0.0f
+        }
         val outputTarget = if (state.playing) {
             engine?.cassettePeakLevel() ?: 0.0f
         } else {
@@ -1149,87 +1422,127 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private fun recordingComplete(): Boolean {
+        val micDone = recordingMicDeck == null || !recorder.isRecording
+        val internalDone = recordingInternalSources.none { source ->
+            engine?.isInternalRecording(source) == true
+        }
+        return micDone && internalDone
+    }
+
     private fun finishRecording() {
         if (!_uiState.value.cassette.recording) return
 
         val cassetteId = recordingCassetteId
-        val deck = recordingDeck
-        val tempFile = recordingTempFile
-        val finalFile = recordingFinalFile
+        val takes = recordingTakes
+        val micDeck = recordingMicDeck
+        val internalSources = recordingInternalSources
+        val startSample = recordStartSample
 
-        recorder.stop()
-        val recordingError = recorder.error
+        internalSources.forEach { engine?.stopInternalRecording(it) }
+        val internalFailed = internalSources.associateWith { source ->
+            engine?.internalRecordingFailed(source) ?: false
+        }
+        if (micDeck != null) recorder.stop()
+        val recordingError = if (micDeck != null) recorder.error else null
 
-        recordingDeck = -1
+        recordingTakes = emptyList()
+        recordingMicDeck = null
+        recordingInternalSources = emptySet()
         recordingCassetteId = null
-        recordingTempFile = null
-        recordingFinalFile = null
+        recordStartSample = 0L
 
         val state = _uiState.value
         val currentCassette = state.cassette.library.cassettes
             .firstOrNull { it.id == cassetteId }
             ?: state.cassette.cassette
 
-        if (deck >= 0) {
-            val deckState = currentCassette.decks.getOrNull(deck)
+        if (takes.isEmpty()) {
+            _uiState.update {
+                it.copy(
+                    cassette = it.cassette.copy(
+                        recording = false,
+                        recordingTracks = emptySet(),
+                    ),
+                    error = "Recording failed",
+                )
+            }
+            return
+        }
+
+        var updatedCassette = currentCassette
+        var savedCount = 0
+        val errors = mutableListOf<String>()
+
+        for (take in takes) {
+            val sourceError = when {
+                take.source == CassetteRecordSource.MIC -> recordingError
+                internalFailed[take.source.nativeCode] == true ->
+                    "${take.source.label} recording failed"
+                else -> null
+            }
+            if (sourceError != null) {
+                take.tempFile.delete()
+                errors += sourceError
+                continue
+            }
+            if (!take.tempFile.exists() || take.tempFile.length() <= 44L) {
+                take.tempFile.delete()
+                errors += "Track ${take.deck + 1} recording failed"
+                continue
+            }
+
+            val existingTrack = currentCassette.audioTracks.getOrNull(take.deck)
+            val merged = CassetteTrackMerger.overlay(
+                existingFile = existingTrack?.filePath?.let(::File),
+                existingStartSample = existingTrack?.startSample ?: 0L,
+                takeFile = take.tempFile,
+                takeStartSample = startSample,
+                outputFile = take.finalFile,
+            )
+            take.tempFile.delete()
+            if (!merged) {
+                errors += "Could not save track ${take.deck + 1}"
+                continue
+            }
+
+            updatedCassette = updatedCassette.withAudioTrack(
+                take.deck,
+                CassetteAudioTrack(
+                    filePath = take.finalFile.absolutePath,
+                    startSample = 0L,
+                ),
+            )
+            savedCount++
+            val loaded = engine?.loadCassetteTrack(
+                take.deck,
+                take.finalFile.absolutePath,
+                0L,
+            ) ?: true
+            if (!loaded) {
+                errors += "Track ${take.deck + 1} saved but could not be loaded"
+            }
+        }
+
+        takes.forEach { take ->
+            val deckState = currentCassette.decks.getOrNull(take.deck)
             if (deckState != null) {
-                engine?.setDeckMute(deck, deckState.muted)
+                engine?.setDeckMute(take.deck, deckState.muted)
             }
         }
 
-        if (recordingError != null || deck < 0 || tempFile == null ||
-            finalFile == null || !tempFile.exists() || tempFile.length() <= 44
-        ) {
-            tempFile?.delete()
-            _uiState.update {
-                it.copy(
-                    cassette = it.cassette.copy(
-                        recording = false,
-                        recordingTrack = null,
-                    ),
-                    error = recordingError ?: "Recording failed",
-                )
-            }
-            return
+        if (savedCount > 0) {
+            cassetteLibrary = cassetteStore.update(cassetteLibrary, updatedCassette)
         }
-
-        if (finalFile.exists()) finalFile.delete()
-        if (!tempFile.renameTo(finalFile)) {
-            tempFile.delete()
-            _uiState.update {
-                it.copy(
-                    cassette = it.cassette.copy(
-                        recording = false,
-                        recordingTrack = null,
-                    ),
-                    error = "Could not save the recording",
-                )
-            }
-            return
-        }
-
-        val updatedCassette = currentCassette.withAudioTrack(
-            deck,
-            CassetteAudioTrack(
-                filePath = finalFile.absolutePath,
-                startSample = recordStartSample,
-            ),
-        )
-        cassetteLibrary = cassetteStore.update(cassetteLibrary, updatedCassette)
-        val loaded = engine?.loadCassetteTrack(
-            deck,
-            finalFile.absolutePath,
-            recordStartSample,
-        ) ?: true
 
         _uiState.update {
             it.copy(
                 cassette = it.cassette.copy(
                     library = cassetteLibrary,
                     recording = false,
-                    recordingTrack = null,
+                    recordingTracks = emptySet(),
                 ),
-                error = if (loaded) null else "Recording saved but could not be loaded",
+                error = errors.joinToString("; ").ifBlank { null },
             )
         }
     }
@@ -1282,7 +1595,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     private fun applyCassetteParameters(audio: MetronomeAudioEngine, cassette: CassetteUiState) {
         audio.setVarispeed(cassette.varispeed)
-        audio.setFlip(cassette.flipped)
+        audio.setFlip(false)
         audio.setTapeEnabled(cassette.tapeEnabled)
         audio.setTapeParameter(0, cassette.tapeDrive)
         audio.setTapeParameter(1, cassette.tapeWow)
@@ -1319,6 +1632,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             audio.setDeckSolo(index, deck.soloed)
             audio.setDeckReverbSend(index, deck.reverbSend)
             audio.setDeckDelaySend(index, deck.delaySend)
+            audio.setDeckBusSend(index, deck.busSend)
         }
     }
 
@@ -1337,7 +1651,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         const val KEY_DRUM_VOLUME = "drum_volume"
         const val KEY_VARISPEED = "cassette_varispeed"
         const val KEY_RECORD_LEVEL = "cassette_record_level"
-        const val KEY_FLIP = "cassette_flip"
+        const val KEY_SIDE_B = "cassette_side_b_buffers"
         const val KEY_TAPE_ENABLED = "cassette_tape_enabled"
         const val KEY_TAPE_DRIVE = "cassette_tape_drive"
         const val KEY_TAPE_TONE = "cassette_tape_tone"
@@ -1356,7 +1670,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         const val MIN_BPM = 30
         const val MAX_BPM = 300
         const val POLL_INTERVAL_MS = 33L
-        const val CASSETTE_SECONDS = 900L
+        const val CASSETTE_SECONDS = Cassette.TAPE_SECONDS
         const val WIND_HOLD_STEP_SECONDS = 1.0
         const val WIND_HOLD_INTERVAL_MS = 50L
         const val METER_DECAY = 0.86f

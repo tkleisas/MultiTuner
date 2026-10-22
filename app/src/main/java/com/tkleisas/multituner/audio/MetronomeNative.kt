@@ -47,6 +47,7 @@ internal object MetronomeNative {
     external fun nativeSetDeckSolo(handle: Long, deck: Int, soloed: Boolean)
     external fun nativeSetDeckReverbSend(handle: Long, deck: Int, send: Float)
     external fun nativeSetDeckDelaySend(handle: Long, deck: Int, send: Float)
+    external fun nativeSetDeckBusSend(handle: Long, deck: Int, send: Float)
     external fun nativeSetCassetteVolume(handle: Long, volume: Float)
     external fun nativeSetTapeEnabled(handle: Long, enabled: Boolean)
     external fun nativeSetTapeParameter(handle: Long, index: Int, value: Float)
@@ -58,4 +59,9 @@ internal object MetronomeNative {
     external fun nativeSetDelayFeedback(handle: Long, value: Float)
     external fun nativeSetDelayTone(handle: Long, value: Float)
     external fun nativeCassettePeakLevel(handle: Long): Float
+    external fun nativeStartInternalRecording(handle: Long, source: Int, path: String): Boolean
+    external fun nativeStopInternalRecording(handle: Long, source: Int)
+    external fun nativeIsInternalRecording(handle: Long, source: Int): Boolean
+    external fun nativeInternalPeakLevel(handle: Long, source: Int): Float
+    external fun nativeInternalRecordingFailed(handle: Long, source: Int): Boolean
 }

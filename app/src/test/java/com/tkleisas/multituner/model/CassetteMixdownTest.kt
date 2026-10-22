@@ -37,10 +37,10 @@ class CassetteMixdownTest {
         val cassette = Cassette.empty("id", "Demo", CassetteColors.default(0))
             .withAudioTrack(
                 0,
-                CassetteAudioTrack(file.absolutePath, 900L * 48000L),
+                CassetteAudioTrack(file.absolutePath, Cassette.TAPE_FRAMES),
             )
 
-        assertEquals(900L * 48000L, CassetteMixdown.totalFrames(cassette))
+        assertEquals(Cassette.TAPE_FRAMES, CassetteMixdown.totalFrames(cassette))
     }
 
     @Test

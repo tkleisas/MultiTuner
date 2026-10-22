@@ -49,6 +49,7 @@ bool MetronomeEngine::open() {
     mDrums.init(static_cast<double>(mSampleRate), kMaxDrumBlock);
     mDrumL.assign(static_cast<size_t>(kMaxDrumBlock), 0.0f);
     mDrumR.assign(static_cast<size_t>(kMaxDrumBlock), 0.0f);
+    mMetronomeBuffer.assign(static_cast<size_t>(kMaxDrumBlock) * 2, 0.0f);
     mCassette.init(static_cast<double>(mSampleRate));
     mCassetteBuffer.assign(static_cast<size_t>(kMaxDrumBlock) * 2, 0.0f);
     mReady.store(true, std::memory_order_release);
@@ -60,6 +61,9 @@ void MetronomeEngine::shutdown() {
     mMetronomePlaying.store(false, std::memory_order_release);
     mDrumsPlaying.store(false, std::memory_order_release);
     mCassettePlaying.store(false, std::memory_order_release);
+    mClickRecorder.stop();
+    mDrumRecorder.stop();
+    mBusRecorder.stop();
     mTransport.stop();
     if (mStream) {
         mStream->requestStop();
@@ -259,6 +263,10 @@ void MetronomeEngine::setDeckDelaySend(int deck, float send) {
     mCassette.setDeckDelaySend(deck, send);
 }
 
+void MetronomeEngine::setDeckBusSend(int deck, float send) {
+    mCassette.setDeckBusSend(deck, send);
+}
+
 void MetronomeEngine::setCassetteVolume(float volume) {
     mCassette.setVolume(volume);
 }
@@ -319,6 +327,55 @@ void MetronomeEngine::setDrumVolume(float volume) {
     mDrums.setVolume(volume);
 }
 
+bool MetronomeEngine::startInternalRecording(int source,
+                                             const std::string& path) {
+    if (!mReady.load(std::memory_order_acquire)) return false;
+    InternalRecorder* recorder = nullptr;
+    switch (source) {
+        case 1: recorder = &mClickRecorder; break;
+        case 2: recorder = &mDrumRecorder; break;
+        case 3: recorder = &mBusRecorder; break;
+        default: return false;
+    }
+    return recorder->start(path, static_cast<double>(mSampleRate));
+}
+
+void MetronomeEngine::stopInternalRecording(int source) {
+    switch (source) {
+        case 1: mClickRecorder.stop(); break;
+        case 2: mDrumRecorder.stop(); break;
+        case 3: mBusRecorder.stop(); break;
+        default: break;
+    }
+}
+
+bool MetronomeEngine::isInternalRecording(int source) const {
+    switch (source) {
+        case 1: return mClickRecorder.isRecording();
+        case 2: return mDrumRecorder.isRecording();
+        case 3: return mBusRecorder.isRecording();
+        default: return false;
+    }
+}
+
+float MetronomeEngine::internalPeakLevel(int source) const {
+    switch (source) {
+        case 1: return mClickRecorder.peakLevel();
+        case 2: return mDrumRecorder.peakLevel();
+        case 3: return mBusRecorder.peakLevel();
+        default: return 0.0f;
+    }
+}
+
+bool MetronomeEngine::internalRecordingFailed(int source) const {
+    switch (source) {
+        case 1: return mClickRecorder.failed();
+        case 2: return mDrumRecorder.failed();
+        case 3: return mBusRecorder.failed();
+        default: return false;
+    }
+}
+
 oboe::DataCallbackResult MetronomeEngine::onAudioReady(
     oboe::AudioStream* /*audioStream*/, void* audioData, int32_t numFrames) {
     auto* output = static_cast<float*>(audioData);
@@ -352,20 +409,47 @@ oboe::DataCallbackResult MetronomeEngine::onAudioReady(
                     output[i * mChannels + 1] += mCassetteBuffer[i * 2 + 1];
                 }
             }
+            if (mBusRecorder.isRecording()) {
+                mBusRecorder.push(mCassette.busLeft(), mCassette.busRight(),
+                                  numFrames);
+            }
         }
 
         if (!(cassettePlaying && flipped)) {
-            if (mMetronomePlaying.load(std::memory_order_acquire)) {
-                mMetronome.process(
-                    output,
-                    numFrames,
-                    mChannels,
-                    effectiveBpm,
-                    position,
-                    true);
+            const bool metronomePlaying =
+                mMetronomePlaying.load(std::memory_order_acquire);
+            const bool clickRecording = mClickRecorder.isRecording();
+            if ((metronomePlaying || clickRecording) &&
+                numFrames <= kMaxDrumBlock) {
+                std::fill(mMetronomeBuffer.begin(),
+                          mMetronomeBuffer.begin() + numFrames * 2, 0.0f);
+                if (metronomePlaying) {
+                    mMetronome.process(
+                        mMetronomeBuffer.data(),
+                        numFrames,
+                        2,
+                        effectiveBpm,
+                        position,
+                        true);
+                    for (int i = 0; i < numFrames; ++i) {
+                        output[i * mChannels] += mMetronomeBuffer[i * 2];
+                        if (mChannels > 1) {
+                            output[i * mChannels + 1] +=
+                                mMetronomeBuffer[i * 2 + 1];
+                        }
+                    }
+                }
+                if (clickRecording) {
+                    mClickRecorder.pushInterleaved(
+                        mMetronomeBuffer.data(), numFrames);
+                }
             }
 
-            if (numFrames <= kMaxDrumBlock) {
+            const bool drumsPlaying =
+                mDrumsPlaying.load(std::memory_order_acquire);
+            const bool drumRecording = mDrumRecorder.isRecording();
+            if ((drumsPlaying || drumRecording) &&
+                numFrames <= kMaxDrumBlock) {
                 std::fill(mDrumL.begin(), mDrumL.begin() + numFrames, 0.0f);
                 std::fill(mDrumR.begin(), mDrumR.begin() + numFrames, 0.0f);
                 mDrums.process(
@@ -374,12 +458,18 @@ oboe::DataCallbackResult MetronomeEngine::onAudioReady(
                     numFrames,
                     effectiveBpm,
                     position,
-                    mDrumsPlaying.load(std::memory_order_acquire));
-                for (int i = 0; i < numFrames; ++i) {
-                    output[i * mChannels] += mDrumL[i];
-                    if (mChannels > 1) {
-                        output[i * mChannels + 1] += mDrumR[i];
+                    drumsPlaying);
+                if (drumsPlaying) {
+                    for (int i = 0; i < numFrames; ++i) {
+                        output[i * mChannels] += mDrumL[i];
+                        if (mChannels > 1) {
+                            output[i * mChannels + 1] += mDrumR[i];
+                        }
                     }
+                }
+                if (drumRecording) {
+                    mDrumRecorder.push(mDrumL.data(), mDrumR.data(),
+                                       numFrames);
                 }
             }
         }
@@ -396,6 +486,9 @@ void MetronomeEngine::onErrorAfterClose(
     mMetronomePlaying.store(false, std::memory_order_release);
     mDrumsPlaying.store(false, std::memory_order_release);
     mCassettePlaying.store(false, std::memory_order_release);
+    mClickRecorder.stop();
+    mDrumRecorder.stop();
+    mBusRecorder.stop();
     mTransport.stop();
     __android_log_print(ANDROID_LOG_ERROR, kLogTag,
                         "audio stream closed with error: %s",

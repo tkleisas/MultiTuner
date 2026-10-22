@@ -52,7 +52,7 @@ DRUMS
 - Drums and click share one transport and can run together
 
 CASSETTE RECORDER
-- Full-width four-track tape with four mono takes and a 15-minute limit
+- Full-width four-track tape with four mono takes and a 10-minute limit
 - Arm and record takes, then overdub while hearing the existing tracks
 - Volume, constant-power pan, mute and solo on every deck strip
 - Hold rewind/fast-forward (<< / >>) or jump to tape start/end (|< / >|)
@@ -154,28 +154,26 @@ final result in Play Console.
 6. Open Metronome from the bottom navigation; press START and verify the beat indicator and click playback.
 7. Open Drums; press START and verify the step indicator and drum playback. Tap a step to cycle off → normal → accent.
 8. Open Cassette; arm a deck strip, press REC and verify that the REC IN meter responds. Press SAVE to finish the take.
-9. Press PLAY, then use REW/FF and FLIP to check tape navigation and reverse routing. Try varispeed and the tape-emulation controls.
+9. Press PLAY, then use REW/FF and FLIP to check tape navigation and deck routing. Try varispeed and the tape-emulation controls.
 10. Raise a deck REV/DLY send and the matching MASTER FX return to verify reverb and delay.
 11. Tap EXPORT, choose WAV or OGG Opus, and verify that the Android share sheet opens with the rendered stereo mix.
 
 No test account or login is required.
 
-## Release notes for v0.7.1
+## Release notes for v0.8.0
 
 ```
-- More realistic cassette shell with label plate, side badge, tape window and hardware
-- Variable reel tape packs with both reels turning in the transport direction
-- Hold << or >> to wind the tape; playback is muted while winding
-- Tap |< or >| to jump to the start or end of the tape
-- Refined transport layout with a separate REC/PLAY/FLIP row
-- Master reverb and delay with per-deck sends and independent returns
-- Stereo cassette mixdown export in WAV and OGG Opus
-- Exports include deck volume, pan, mute, solo, sends, master FX and tape
-- Export is forward at 1x, ends at the last take, and excludes click and drums
-- Share exports through the Android share sheet to Files, Drive, email or chat
-- Four-track cassette recorder with flip/reverse, varispeed and tape character
-- Record input gain and live REC IN/TAPE OUT meters
-- Multiple cassettes, shell colours and local take storage
+- 10-minute four-track tape with preallocated, zero-filled track files
+- True Side A/B flip reverses full track buffers and routes 1<->4, 2<->3
+- Playback and the tape counter always run forward; Side B shows decks 4,3,2,1
+- Record MIC, CLICK, DRUMS or the cassette BUS directly to armed tracks
+- Simultaneous recording with one source per track and per-deck BUS sends
+- Punch-in/punch-out recording with analog-style overwrite
+- REC toggles recording; separate PLAY, STOP and FLIP controls; STOP ALL
+- Recording and guides continue while switching between app tabs
+- Metronome and drums no longer start or stop with the cassette transport
+- Tape stops at 10:00; guides stop via their switches, STOP ALL or app background
+- Reversible side flip verified byte-for-byte on device
 - Native YIN pitch detection for guitar, bouzouki, saz, tambouras, oud, laouto and lute
 - 16 KB page size support, R8 optimization and automated JVM/native tests
 - Offline, no ads and no data collection; recordings stay on the device
@@ -218,7 +216,7 @@ An **organization** account does not have this 12-tester requirement.
 - [ ] Set the privacy policy URL
 - [ ] Complete Ads, App access, Content rating, Target audience and Data safety
 - [ ] Confirm target API 36 is reported for the AAB
-- [ ] Upload `MultiTuner-v0.7.1.aab` to Internal testing first
+- [ ] Upload `MultiTuner-v0.8.0.aab` to Internal testing first
 - [ ] Test the Play-signed build on a physical device
 - [ ] Run the pre-launch report
 - [ ] Complete closed testing if required

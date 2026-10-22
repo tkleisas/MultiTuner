@@ -71,9 +71,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.tkleisas.multituner.PlaybackUiState
 import com.tkleisas.multituner.audio.OggOpusEncoder
+import com.tkleisas.multituner.model.Cassette
 import com.tkleisas.multituner.model.CassetteColors
 import com.tkleisas.multituner.model.CassetteExportFormat
 import com.tkleisas.multituner.model.CassetteLibrary
+import com.tkleisas.multituner.model.CassetteRecordSource
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.cos
@@ -97,6 +99,8 @@ fun CassetteScreen(
     onDeckPan: (Int, Float) -> Unit,
     onDeckReverbSend: (Int, Float) -> Unit,
     onDeckDelaySend: (Int, Float) -> Unit,
+    onDeckBusSend: (Int, Float) -> Unit,
+    onDeckSource: (Int, CassetteRecordSource) -> Unit,
     onVarispeed: (Float) -> Unit,
     onRecordLevel: (Float) -> Unit,
     onWindStart: (Int) -> Unit,
@@ -105,8 +109,11 @@ fun CassetteScreen(
     onToEnd: () -> Unit,
     onFlip: () -> Unit,
     onTogglePlay: () -> Unit,
+    onStop: () -> Unit,
+    onStopAll: () -> Unit,
     onToggleRecord: () -> Unit,
     onToggleMetronome: () -> Unit,
+    onToggleDrums: () -> Unit,
     onTapeEnabled: (Boolean) -> Unit,
     onTapeDrive: (Float) -> Unit,
     onTapeTone: (Float) -> Unit,
@@ -152,8 +159,13 @@ fun CassetteScreen(
     ) { granted ->
         if (granted) onToggleRecord()
     }
+    val requiresMic = state.cassette.armedTracks.any { deckIndex ->
+        state.cassette.cassette.decks[deckIndex].recordSource ==
+            CassetteRecordSource.MIC
+    }
     val recordAction = {
-        if (ContextCompat.checkSelfPermission(
+        if (!requiresMic || state.cassette.recording ||
+            ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.RECORD_AUDIO,
             ) == PackageManager.PERMISSION_GRANTED
@@ -199,6 +211,7 @@ fun CassetteScreen(
                     onToStart = onToStart,
                     onToEnd = onToEnd,
                     onPlay = onTogglePlay,
+                    onStop = onStop,
                     onRecord = recordAction,
                     onFlip = onFlip,
                 )
@@ -223,6 +236,32 @@ fun CassetteScreen(
                         color = MutedText,
                     )
                 }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "DRUMS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MutedText,
+                    )
+                    Switch(
+                        checked = state.drumsPlaying,
+                        onCheckedChange = { onToggleDrums() },
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Drum machine as a recording source",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MutedText,
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                StopAllButton(
+                    enabled = state.metronomePlaying || state.drumsPlaying ||
+                        state.cassette.playing || state.cassette.recording,
+                    onClick = onStopAll,
+                )
                 Spacer(Modifier.height(14.dp))
                 RecordLevelPanel(state, onRecordLevel)
                 Spacer(Modifier.height(14.dp))
@@ -235,6 +274,8 @@ fun CassetteScreen(
                     onPan = onDeckPan,
                     onReverbSend = onDeckReverbSend,
                     onDelaySend = onDeckDelaySend,
+                    onBusSend = onDeckBusSend,
+                    onSource = onDeckSource,
                 )
                 Spacer(Modifier.height(14.dp))
                 FxPanel(
@@ -453,7 +494,7 @@ private fun Header(
                 style = MaterialTheme.typography.headlineMedium,
             )
             Text(
-                text = "4-track · 15 minute tape",
+                text = "4-track · ${Cassette.TAPE_SECONDS / 60} minute tape",
                 style = MaterialTheme.typography.labelSmall,
                 color = MutedText,
             )
@@ -495,13 +536,8 @@ private fun CassetteShell(
     val sampleRate = if (state.sampleRate > 0) state.sampleRate.toDouble() else 48_000.0
     val sourceSeconds = (state.cassette.positionSamples / sampleRate) *
         state.cassette.varispeed
-    val tapeSeconds = if (state.cassette.flipped) {
-        (CassettePlayerTapeSeconds - sourceSeconds).coerceIn(0.0, CassettePlayerTapeSeconds)
-    } else {
-        sourceSeconds.coerceIn(0.0, CassettePlayerTapeSeconds)
-    }
-    val direction = if (state.cassette.flipped) -1.0 else 1.0
-    val angle = (sourceSeconds * 70.0 * direction) % 360.0
+    val tapeSeconds = sourceSeconds.coerceIn(0.0, CassettePlayerTapeSeconds)
+    val angle = (sourceSeconds * 70.0) % 360.0
     val shellColor = Color(cassette.color)
     val tapeFraction = (tapeSeconds / CassettePlayerTapeSeconds).coerceIn(0.0, 1.0)
 
@@ -568,11 +604,7 @@ private fun CassetteShell(
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
-                                text = if (state.cassette.flipped) {
-                                    "SIDE B · REVERSE"
-                                } else {
-                                    "SIDE A"
-                                },
+                                text = if (state.cassette.flipped) "SIDE B" else "SIDE A",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color(0xFF0B0F0C).copy(alpha = 0.65f),
                             )
@@ -765,7 +797,8 @@ private fun CassetteShell(
                         color = Color(0xFF0B0F0C).copy(alpha = 0.28f),
                     ) {
                         Text(
-                            text = formatTapeTime(tapeSeconds) + " / 15:00",
+                            text = formatTapeTime(tapeSeconds) + " / " +
+                                formatTapeTime(CassettePlayerTapeSeconds),
                             style = MaterialTheme.typography.labelMedium,
                             color = Color(0xFFE6F2E9),
                             modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
@@ -774,12 +807,16 @@ private fun CassetteShell(
                     Spacer(Modifier.weight(1f))
                     Text(
                         text = when {
+                            state.cassette.flipping -> "FLIPPING"
+                            state.cassette.tapePreparing -> "PREPARING"
                             state.cassette.recording -> "RECORDING"
                             state.cassette.winding -> "WINDING"
                             else -> "TAPE COUNTER"
                         },
                         style = MaterialTheme.typography.labelSmall,
                         color = when {
+                            state.cassette.flipping -> WarnYellow
+                            state.cassette.tapePreparing -> WarnYellow
                             state.cassette.recording -> ErrorRed
                             state.cassette.winding -> InTuneGreen
                             else -> Color(0xFF0B0F0C).copy(alpha = 0.62f)
@@ -836,6 +873,7 @@ private fun Transport(
     onToStart: () -> Unit,
     onToEnd: () -> Unit,
     onPlay: () -> Unit,
+    onStop: () -> Unit,
     onRecord: () -> Unit,
     onFlip: () -> Unit,
 ) {
@@ -849,7 +887,8 @@ private fun Transport(
                 active = false,
                 color = MutedText,
                 onClick = onToStart,
-                enabled = !state.cassette.recording,
+                enabled = !state.cassette.recording &&
+                    !state.cassette.tapePreparing && !state.cassette.flipping,
                 height = 44.dp,
                 modifier = Modifier.weight(1f),
             )
@@ -857,14 +896,16 @@ private fun Transport(
                 label = "<<",
                 onStart = { onWindStart(-1) },
                 onStop = onWindStop,
-                enabled = !state.cassette.recording,
+                enabled = !state.cassette.recording &&
+                    !state.cassette.tapePreparing && !state.cassette.flipping,
                 modifier = Modifier.weight(1f),
             )
             HoldButton(
                 label = ">>",
                 onStart = { onWindStart(1) },
                 onStop = onWindStop,
-                enabled = !state.cassette.recording,
+                enabled = !state.cassette.recording &&
+                    !state.cassette.tapePreparing && !state.cassette.flipping,
                 modifier = Modifier.weight(1f),
             )
             TransportButton(
@@ -872,7 +913,8 @@ private fun Transport(
                 active = false,
                 color = MutedText,
                 onClick = onToEnd,
-                enabled = !state.cassette.recording,
+                enabled = !state.cassette.recording &&
+                    !state.cassette.tapePreparing && !state.cassette.flipping,
                 height = 44.dp,
                 modifier = Modifier.weight(1f),
             )
@@ -885,26 +927,39 @@ private fun Transport(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             TransportButton(
-                label = if (state.cassette.recording) "SAVE" else "REC",
+                label = "REC",
                 active = state.cassette.recording,
                 color = ErrorRed,
                 onClick = onRecord,
-                enabled = !state.cassette.flipped || state.cassette.recording,
+                enabled = (!state.cassette.flipped || state.cassette.recording) &&
+                    !state.cassette.tapePreparing && !state.cassette.flipping,
                 modifier = Modifier.weight(1f),
             )
             TransportButton(
-                label = if (state.cassette.playing) "STOP" else "PLAY",
+                label = "PLAY",
                 active = state.cassette.playing,
                 color = InTuneGreen,
                 onClick = onPlay,
+                enabled = !state.cassette.playing &&
+                    !state.cassette.tapePreparing && !state.cassette.flipping,
                 modifier = Modifier.weight(1f),
             )
             TransportButton(
-                label = if (state.cassette.flipped) "UNFLIP" else "FLIP",
+                label = "STOP",
+                active = state.cassette.playing || state.cassette.recording,
+                color = ErrorRed,
+                onClick = onStop,
+                enabled = (state.cassette.playing || state.cassette.recording) &&
+                    !state.cassette.flipping,
+                modifier = Modifier.weight(1f),
+            )
+            TransportButton(
+                label = "FLIP",
                 active = state.cassette.flipped,
                 color = WarnYellow,
                 onClick = onFlip,
-                enabled = !state.cassette.recording,
+                enabled = !state.cassette.recording &&
+                    !state.cassette.tapePreparing && !state.cassette.flipping,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -912,15 +967,24 @@ private fun Transport(
         Spacer(Modifier.height(4.dp))
         Text(
             text = when {
+                state.cassette.flipping -> "Flipping the tape…"
+                state.cassette.tapePreparing ->
+                    "Preparing four zeroed " +
+                    formatTapeTime(CassettePlayerTapeSeconds) + " tracks…"
                 state.cassette.flipped ->
-                    "Side B is reverse playback. Flip back to record."
+                    "Side B is playback-only. Flip back to record."
+                state.cassette.recording ->
+                    "REC punches out; STOP ends tape playback."
                 state.cassette.winding -> "Winding tape…"
                 else ->
                     "Hold << / >> to wind; |< / >| jump to tape start/end."
             },
             style = MaterialTheme.typography.labelSmall,
             color = when {
+                state.cassette.flipping -> WarnYellow
+                state.cassette.tapePreparing -> WarnYellow
                 state.cassette.flipped -> WarnYellow.copy(alpha = 0.8f)
+                state.cassette.recording -> ErrorRed.copy(alpha = 0.85f)
                 state.cassette.winding -> InTuneGreen
                 else -> MutedText
             },
@@ -1031,16 +1095,17 @@ private fun DeckStrips(
     onPan: (Int, Float) -> Unit,
     onReverbSend: (Int, Float) -> Unit,
     onDelaySend: (Int, Float) -> Unit,
+    onBusSend: (Int, Float) -> Unit,
+    onSource: (Int, CassetteRecordSource) -> Unit,
 ) {
     val cassette = state.cassette.cassette
     val order = if (state.cassette.flipped) (3 downTo 0).toList() else (0..3).toList()
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         order.forEach { deckIndex ->
-            val route = if (state.cassette.flipped) 3 - deckIndex else deckIndex
             val deck = cassette.decks[deckIndex]
-            val track = cassette.audioTracks[route]
-            val armed = state.cassette.armedTrack == deckIndex
-            val recording = state.cassette.recordingTrack == deckIndex
+            val track = cassette.audioTracks[deckIndex]
+            val armed = deckIndex in state.cassette.armedTracks
+            val recording = deckIndex in state.cassette.recordingTracks
 
             Surface(
                 shape = RoundedCornerShape(16.dp),
@@ -1072,13 +1137,6 @@ private fun DeckStrips(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (track.filePath != null) InTuneGreen else MutedText,
                             )
-                            if (track.filePath != null) {
-                                Text(
-                                    text = "from ${formatTapeTime(track.startSample / 48_000.0)}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MutedText,
-                                )
-                            }
                         }
                         if (!state.cassette.flipped) {
                             Chip(
@@ -1151,6 +1209,32 @@ private fun DeckStrips(
                         value = deck.delaySend,
                         onValue = { onDelaySend(deckIndex, it) },
                     )
+                    SendRow(
+                        label = "BUS",
+                        value = deck.busSend,
+                        onValue = { onBusSend(deckIndex, it) },
+                    )
+                    if (!state.cassette.flipped && (armed || recording)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "SRC",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MutedText,
+                            )
+                            CassetteRecordSource.entries.forEach { source ->
+                                Chip(
+                                    text = source.label,
+                                    active = deck.recordSource == source,
+                                    onClick = { onSource(deckIndex, source) },
+                                    enabled = !recording,
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1190,9 +1274,11 @@ private fun Chip(
     active: Boolean,
     onClick: () -> Unit,
     activeColor: Color = InTuneGreen,
+    enabled: Boolean = true,
 ) {
     Surface(
         onClick = onClick,
+        enabled = enabled,
         shape = RoundedCornerShape(10.dp),
         color = if (active) activeColor.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
         border = BorderStroke(1.dp, if (active) activeColor else PanelBorder),
@@ -1204,6 +1290,41 @@ private fun Chip(
             style = MaterialTheme.typography.labelSmall,
             color = if (active) activeColor else MaterialTheme.colorScheme.onSurface,
         )
+    }
+}
+
+@Composable
+private fun StopAllButton(
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(12.dp),
+        color = if (enabled) ErrorRed.copy(alpha = 0.12f) else PanelColor,
+        border = BorderStroke(1.dp, if (enabled) ErrorRed else PanelBorder),
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusProperties { canFocus = false },
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "STOP ALL",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (enabled) ErrorRed else MutedText.copy(alpha = 0.5f),
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "Tape · click · drums",
+                style = MaterialTheme.typography.labelSmall,
+                color = MutedText,
+            )
+        }
     }
 }
 
@@ -1252,7 +1373,7 @@ private fun RecordLevelPanel(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Input gain · live mic and cassette output levels",
+                text = "MIC gain · armed tracks record together from their SRC",
                 style = MaterialTheme.typography.labelSmall,
                 color = MutedText,
             )
@@ -1542,7 +1663,7 @@ private fun CassetteLibraryDialog(
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                     Text(
-                                        text = "${cassette.audioTracks.count { it.filePath != null }} takes · 15 min",
+                                        text = "${cassette.audioTracks.count { it.filePath != null }} takes · ${Cassette.TAPE_SECONDS / 60} min",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MutedText,
                                     )
@@ -1579,7 +1700,7 @@ private fun CassetteLibraryDialog(
     )
 }
 
-private const val CassettePlayerTapeSeconds = 900.0
+private val CassettePlayerTapeSeconds = Cassette.TAPE_SECONDS.toDouble()
 
 private fun formatTapeTime(seconds: Double): String {
     val clamped = seconds.coerceIn(0.0, CassettePlayerTapeSeconds)

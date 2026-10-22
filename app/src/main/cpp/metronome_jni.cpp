@@ -293,6 +293,12 @@ Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDeckDelaySend(
 }
 
 JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDeckBusSend(
+    JNIEnv*, jobject, jlong handle, jint deck, jfloat send) {
+    if (auto* engine = fromHandle(handle)) engine->setDeckBusSend(deck, send);
+}
+
+JNIEXPORT void JNICALL
 Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetCassetteVolume(
     JNIEnv*, jobject, jlong handle, jfloat volume) {
     if (auto* engine = fromHandle(handle)) engine->setCassetteVolume(volume);
@@ -310,6 +316,49 @@ JNIEXPORT void JNICALL
 Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetTapeParameter(
     JNIEnv*, jobject, jlong handle, jint index, jfloat value) {
     if (auto* engine = fromHandle(handle)) engine->setTapeParameter(index, value);
+}
+
+
+JNIEXPORT jboolean JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeStartInternalRecording(
+    JNIEnv* env, jobject, jlong handle, jint source, jstring path) {
+    auto* engine = fromHandle(handle);
+    if (engine == nullptr || path == nullptr) return JNI_FALSE;
+    const char* chars = env->GetStringUTFChars(path, nullptr);
+    if (chars == nullptr) return JNI_FALSE;
+    const bool started = engine->startInternalRecording(
+        source, std::string(chars));
+    env->ReleaseStringUTFChars(path, chars);
+    return started ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeStopInternalRecording(
+    JNIEnv*, jobject, jlong handle, jint source) {
+    if (auto* engine = fromHandle(handle)) engine->stopInternalRecording(source);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeIsInternalRecording(
+    JNIEnv*, jobject, jlong handle, jint source) {
+    auto* engine = fromHandle(handle);
+    return engine != nullptr && engine->isInternalRecording(source)
+        ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jfloat JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeInternalPeakLevel(
+    JNIEnv*, jobject, jlong handle, jint source) {
+    auto* engine = fromHandle(handle);
+    return engine != nullptr ? engine->internalPeakLevel(source) : 0.0f;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeInternalRecordingFailed(
+    JNIEnv*, jobject, jlong handle, jint source) {
+    auto* engine = fromHandle(handle);
+    return engine != nullptr && engine->internalRecordingFailed(source)
+        ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT void JNICALL

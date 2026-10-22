@@ -15,6 +15,7 @@ add_library(multituner SHARED
     audio/Delay.cpp
     audio/CassettePlayer.cpp
     audio/MetronomeEngine.cpp
+    audio/InternalRecorder.cpp
 )
 
 target_compile_features(multituner PRIVATE cxx_std_17)

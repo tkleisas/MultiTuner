@@ -296,6 +296,33 @@ void testRenderWav() {
     std::remove(outputPath.c_str());
 }
 
+
+void testBusSend() {
+    const auto path = writeWav(
+        tempPath("bus"), std::vector<int16_t>(1000, 16384));
+
+    CassettePlayer player;
+    player.init(48000.0);
+    check(player.loadTrack(0, path, 0), "bus track loads");
+    player.setVolume(1.0f);
+    player.setDeckGain(0, 1.0f);
+    player.setDeckPan(0, -1.0f);
+    player.setDeckSolo(0, true);
+    player.setDeckBusSend(0, 1.0f);
+
+    std::vector<float> buffer(64 * 2, 0.0f);
+    player.process(buffer.data(), 64, 0, 1.0f);
+    check(player.busLeft()[0] > 0.49f, "deck bus send feeds the bus");
+    check(player.busRight()[0] == 0.0f, "deck bus respects pan");
+
+    player.setDeckMute(0, true);
+    std::fill(buffer.begin(), buffer.end(), 0.0f);
+    player.process(buffer.data(), 64, 0, 1.0f);
+    check(player.busLeft()[0] == 0.0f, "muted deck does not feed the bus");
+
+    std::remove(path.c_str());
+}
+
 void testTapeEmulation() {
     const auto path = writeWav(
         tempPath("tape"), std::vector<int16_t>(4096, 16384));
@@ -328,6 +355,7 @@ int main() {
     testStartOffset();
     testFlipAndVarispeed();
     testEffectSends();
+    testBusSend();
     testTapeEmulation();
     testRenderWav();
 

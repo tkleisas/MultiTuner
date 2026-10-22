@@ -9,6 +9,7 @@
 
 #include "audio/CassettePlayer.h"
 #include "audio/DrumMachine.h"
+#include "audio/InternalRecorder.h"
 #include "audio/Metronome.h"
 #include "audio/Transport.h"
 
@@ -59,6 +60,7 @@ public:
     void setDeckSolo(int deck, bool soloed);
     void setDeckReverbSend(int deck, float send);
     void setDeckDelaySend(int deck, float send);
+    void setDeckBusSend(int deck, float send);
     void setCassetteVolume(float volume);
     void setTapeEnabled(bool enabled);
     void setTapeParameter(int index, float value);
@@ -70,6 +72,12 @@ public:
     void setDelayFeedback(float value);
     void setDelayTone(float value);
     float cassettePeakLevel() const;
+
+    bool startInternalRecording(int source, const std::string& path);
+    void stopInternalRecording(int source);
+    bool isInternalRecording(int source) const;
+    float internalPeakLevel(int source) const;
+    bool internalRecordingFailed(int source) const;
 
     void setDrumStep(int track, int step, int level);
     void setDrumPattern(const uint8_t* levels);
@@ -106,7 +114,11 @@ private:
     int32_t mSampleRate = 48000;
     std::vector<float> mDrumL;
     std::vector<float> mDrumR;
+    std::vector<float> mMetronomeBuffer;
     std::vector<float> mCassetteBuffer;
+    InternalRecorder mClickRecorder;
+    InternalRecorder mDrumRecorder;
+    InternalRecorder mBusRecorder;
 };
 
 } // namespace multituner::audio

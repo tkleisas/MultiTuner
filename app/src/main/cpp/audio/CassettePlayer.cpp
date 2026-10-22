@@ -111,6 +111,8 @@ void CassettePlayer::init(double sampleRate) {
     mReverbSendRight.assign(kMaxEffectBlock, 0.0f);
     mDelaySendLeft.assign(kMaxEffectBlock, 0.0f);
     mDelaySendRight.assign(kMaxEffectBlock, 0.0f);
+    mBusLeft.assign(kMaxEffectBlock, 0.0f);
+    mBusRight.assign(kMaxEffectBlock, 0.0f);
     reset();
 }
 
@@ -268,6 +270,13 @@ void CassettePlayer::setDeckDelaySend(int deck, float send) {
     }
 }
 
+void CassettePlayer::setDeckBusSend(int deck, float send) {
+    if (deck >= 0 && deck < kTracks) {
+        mDeck[deck].busSend.store(
+            std::clamp(send, 0.0f, 1.0f), std::memory_order_release);
+    }
+}
+
 void CassettePlayer::setVolume(float volume) {
     mVolume.store(std::clamp(volume, 0.0f, 1.0f), std::memory_order_release);
 }
@@ -371,6 +380,8 @@ void CassettePlayer::process(float* stereo, int numFrames,
         mDelay.setFeedback(delayFeedback);
         mDelay.setTone(delayTone);
     }
+    std::fill(mBusLeft.begin(), mBusLeft.begin() + effectFrames, 0.0f);
+    std::fill(mBusRight.begin(), mBusRight.begin() + effectFrames, 0.0f);
 
     for (int deck = 0; deck < kTracks; ++deck) {
         if (mDeck[deck].muted.load(std::memory_order_acquire)) continue;
@@ -392,10 +403,13 @@ void CassettePlayer::process(float* stereo, int numFrames,
         const float delaySend = delayActive
             ? mDeck[deck].delaySend.load(std::memory_order_acquire)
             : 0.0f;
+        const float busSend = mDeck[deck].busSend.load(std::memory_order_acquire);
         const float reverbGainL = gainL * reverbSend;
         const float reverbGainR = gainR * reverbSend;
         const float delayGainL = gainL * delaySend;
         const float delayGainR = gainR * delaySend;
+        const float busGainL = gainL * busSend;
+        const float busGainR = gainR * busSend;
 
         const double rate =
             static_cast<double>(track->sampleRate) / mSampleRate;
@@ -424,6 +438,10 @@ void CassettePlayer::process(float* stereo, int numFrames,
             if (delaySend > 0.0f) {
                 mDelaySendLeft[static_cast<size_t>(i)] += sample * delayGainL;
                 mDelaySendRight[static_cast<size_t>(i)] += sample * delayGainR;
+            }
+            if (busSend > 0.0f) {
+                mBusLeft[static_cast<size_t>(i)] += sample * busGainL;
+                mBusRight[static_cast<size_t>(i)] += sample * busGainR;
             }
         }
     }

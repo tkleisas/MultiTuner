@@ -44,3 +44,11 @@ g++ -std=c++17 -O2 \
     "$ROOT/app/src/main/cpp/audio/Delay.cpp" \
     -o "$OUT_DIR/multituner_effects_test"
 "$OUT_DIR/multituner_effects_test"
+
+g++ -std=c++17 -O2 \
+    -I "$ROOT/app/src/main/cpp" \
+    "$ROOT/native-tests/internal_recorder_test.cpp" \
+    "$ROOT/app/src/main/cpp/audio/InternalRecorder.cpp" \
+    -pthread \
+    -o "$OUT_DIR/multituner_internal_recorder_test"
+"$OUT_DIR/multituner_internal_recorder_test"

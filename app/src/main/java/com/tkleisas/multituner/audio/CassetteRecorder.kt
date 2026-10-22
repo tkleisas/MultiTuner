@@ -9,6 +9,7 @@ import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import androidx.core.content.ContextCompat
+import com.tkleisas.multituner.model.Cassette
 import java.io.File
 import java.io.RandomAccessFile
 import java.util.concurrent.CountDownLatch
@@ -268,7 +269,7 @@ class CassetteRecorder(context: Context) {
     )
 
     companion object {
-        const val SAMPLE_RATE = 48000
-        const val MAX_SECONDS = 900
+        const val SAMPLE_RATE = Cassette.SAMPLE_RATE
+        const val MAX_SECONDS = Cassette.TAPE_SECONDS
     }
 }

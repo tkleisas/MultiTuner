@@ -19,22 +19,19 @@ data class WavInfo(
 )
 
 object CassetteMixdown {
-    private const val OUTPUT_SAMPLE_RATE = 48000L
-    private const val MAX_TAPE_SECONDS = 900L
-
     fun totalFrames(cassette: Cassette): Long {
         var end = 0L
         cassette.audioTracks.forEach { track ->
             val path = track.filePath ?: return@forEach
             val info = wavInfo(File(path)) ?: return@forEach
             val frames = if (info.sampleRate > 0) {
-                info.frames * OUTPUT_SAMPLE_RATE / info.sampleRate
+                info.frames * Cassette.SAMPLE_RATE / info.sampleRate
             } else {
                 info.frames
             }
             end = maxOf(end, track.startSample + frames)
         }
-        return end.coerceIn(0L, MAX_TAPE_SECONDS * OUTPUT_SAMPLE_RATE)
+        return end.coerceIn(0L, Cassette.TAPE_FRAMES)
     }
 
     fun wavInfo(file: File): WavInfo? {

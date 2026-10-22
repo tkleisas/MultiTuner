@@ -10,8 +10,8 @@ native C++ YIN pitch detector and a shared Oboe audio engine.
 
 The tuner ships with presets for guitar, Greek bouzouki (3- and 4-course), saz,
 tambouras, oud, laouto and Renaissance lute. Metronome, drums and cassette share
-the same transport. The cassette is a full-width four-track, 15-minute tape with
-flip/reverse playback, constant-power pan, 0.5×–2× varispeed and tape
+the same transport. The cassette is a full-width four-track, 10-minute tape with
+side flip, constant-power pan, 0.5×–2× varispeed and tape
 emulation. It targets Android 10 and newer and is designed for both phones and
 tablets.
 
@@ -65,14 +65,14 @@ master reverb/delay returns, and the WAV/OGG export dialog.
   and volume, with sample-accurate audio.
 - **Drum machine** - 8 synthesized tracks, 16-step sequencer, normal/accent
   steps, Rock/Funk/House/Break presets, swing and drum volume.
-- **Four-track cassette recorder** - 15-minute full-width tape, four mono takes,
+- **Four-track cassette recorder** - 10-minute full-width tape, four mono takes,
   arm/record, constant-power pan, volume, mute/solo, hold-to-wind transport and
   cassette library with shell colours.
 - **Realistic tape transport** - shell shading, label and side badge, variable
   tape packs on the reels, hold-to-wind `<<`/`>>`, and `|<`/`>|` start/end jumps.
-- **Flip and varispeed** - reverse playback with physical deck-strip routing,
-  tape counter, 0.5×–2× playback varispeed with anti-aliased resampling, and a
-  shared click/drum transport that follows the speed.
+- **Flip and varispeed** - full-buffer side flip with deck strips routed
+  1↔4 and 2↔3, a forward tape counter, 0.5×–2× playback varispeed with
+  anti-aliased resampling, and a shared click/drum transport that follows the speed.
 - **Tape character and metering** - saturation, wow, flutter, hiss, tone and
   wet/dry mix, plus live record-input and cassette-output level meters.
 - **Master reverb and delay** - two stereo send/return effects with per-deck
@@ -137,7 +137,7 @@ strings" detection is not implemented.
 ## Cassette recorder
 
 The cassette screen emulates a full-width four-track tape deck rather than a
-stereo cassette. A cassette holds four mono takes of up to 15 minutes at 48 kHz,
+stereo cassette. A cassette holds four mono takes of up to 10 minutes at 48 kHz,
 16-bit PCM, recorded to app-specific storage.
 
 - Tap a deck strip's **ARM** button, then **REC** to record. Recording starts at
@@ -146,9 +146,9 @@ stereo cassette. A cassette holds four mono takes of up to 15 minutes at 48 kHz,
   first step. Winding is content-time based and respects varispeed.
 - **|<** and **>|** jump to the start or end of the tape. Playback is muted while
   winding and resumes from the new position on release.
-- **PLAY** resumes from the current position. **FLIP** plays the same tape
-  backwards with deck strips routed 1↔4 and 2↔3. Recording while flipped is
-  disabled.
+- **PLAY** resumes from the current position. **FLIP** reverses every full
+  10:00 track buffer and routes deck strips 1↔4 and 2↔3. Playback and the counter
+  still run forward. Recording while flipped is disabled.
 - The **REC LEVEL** slider sets microphone input gain from 0–200% and applies
   live while recording. The **REC IN** and **TAPE OUT** meters show post-gain
   input and cassette playback levels.
@@ -272,7 +272,7 @@ The JVM tests cover:
 The native tests cover YIN accuracy for guitar, bouzouki, saz and low B,
 including harmonic and plucked-style signals, sample-accurate metronome timing,
 drum synthesis, step timing, swing and pattern playback, and cassette WAV
-loading, mixer routing, flip/reverse, varispeed, reverb/delay sends, tape
+loading, mixer routing, side flip, varispeed, reverb/delay sends, tape
 bypass, level metering and stereo WAV mixdown.
 
 For TDD: write a failing test first, make the smallest change that passes it,
@@ -530,6 +530,7 @@ The full product plan is in [`docs/DESIGN.md`](docs/DESIGN.md). Current status:
 - **0.4.0** — cassette 4-track recorder, flip/reverse, varispeed, tape, levels
 - **0.7.0** — master reverb/delay sends and stereo WAV/OGG export with sharing
 - **0.7.1** — realistic cassette shell, variable tape packs, hold-to-wind and tape jump controls
+- **0.8.0** — multi-source recording, punch-in overwrite, 10-minute preallocated tape and full-buffer side flip
 - Later — record varispeed, per-track tape, custom tuning editor, makam presets
 
 ## Contributing

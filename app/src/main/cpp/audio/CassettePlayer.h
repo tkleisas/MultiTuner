@@ -15,7 +15,7 @@ namespace multituner::audio {
 class CassettePlayer {
 public:
     static constexpr int kTracks = 4;
-    static constexpr double kTapeSeconds = 900.0;
+    static constexpr double kTapeSeconds = 600.0;
 
     void init(double sampleRate);
     void reset();
@@ -30,6 +30,7 @@ public:
     void setDeckSolo(int deck, bool soloed);
     void setDeckReverbSend(int deck, float send);
     void setDeckDelaySend(int deck, float send);
+    void setDeckBusSend(int deck, float send);
     void setVolume(float volume);
     void setFlip(bool flipped);
     void setTapeEnabled(bool enabled);
@@ -42,6 +43,8 @@ public:
     void setDelayFeedback(float value);
     void setDelayTone(float value);
     float peakLevel() const;
+    const float* busLeft() const { return mBusLeft.data(); }
+    const float* busRight() const { return mBusRight.data(); }
 
     void process(float* stereo, int numFrames, int64_t transportSamples,
                  float varispeed);
@@ -68,6 +71,7 @@ private:
         std::atomic<bool> soloed{false};
         std::atomic<float> reverbSend{0.0f};
         std::atomic<float> delaySend{0.0f};
+        std::atomic<float> busSend{0.0f};
     };
 
     static bool parseWav(const uint8_t* bytes, size_t size, int& sampleRate,
@@ -97,8 +101,10 @@ private:
     std::vector<float> mReverbSendRight;
     std::vector<float> mDelaySendLeft;
     std::vector<float> mDelaySendRight;
+    std::vector<float> mBusLeft;
+    std::vector<float> mBusRight;
     double mSampleRate = 48000.0;
-    double mTapeLengthSamples = 900.0 * 48000.0;
+    double mTapeLengthSamples = 600.0 * 48000.0;
 };
 
 } // namespace multituner::audio

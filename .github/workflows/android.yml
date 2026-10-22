@@ -63,6 +63,9 @@ jobs:
       - name: Native detector tests
         run: ./native-tests/run.sh
 
+      - name: JVM unit tests
+        run: ./gradlew testDebugUnitTest
+
       - name: Lint and debug build
         run: ./gradlew lintDebug assembleDebug
 

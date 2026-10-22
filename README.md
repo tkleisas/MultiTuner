@@ -134,9 +134,10 @@ The debug APK is written to:
 app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Run lint, the native detector tests and the 16 KB page-size check:
+Run the JVM tests, lint, native detector tests and the 16 KB page-size check:
 
 ```bash
+./gradlew testDebugUnitTest
 ./gradlew lintDebug
 ./native-tests/run.sh
 
@@ -165,6 +166,37 @@ The R8 mapping file is written to
 `app/build/outputs/mapping/release/mapping.txt`, and the AAB embeds it for Play
 Console deobfuscation. JNI entry points are kept in
 [`app/proguard-rules.pro`](app/proguard-rules.pro).
+
+## Testing
+
+The test suite has fast JVM tests for pure Kotlin logic and host-side native
+tests for the YIN detector.
+
+```bash
+./gradlew testDebugUnitTest
+./native-tests/run.sh
+./gradlew lintDebug
+```
+
+Run all of them with:
+
+```bash
+./scripts/test.sh
+```
+
+The JVM tests cover:
+
+- frequency, MIDI and cents conversions at multiple reference pitches
+- sharp/flat note naming and octave numbering
+- tuning preset integrity and the expected guitar/bouzouki/saz/tambouras notes
+- string matching, locked courses, octave-pair courses and chromatic fallback
+- display smoothing, in-tune hold, confidence/RMS gating and reset behavior
+
+The native tests cover YIN accuracy for guitar, bouzouki, saz and low B,
+including harmonic and plucked-style signals, detuned input and silence gating.
+
+For TDD: write a failing test first, make the smallest change that passes it,
+then run `./scripts/test.sh` before committing.
 
 ## Release signing
 
@@ -258,8 +290,8 @@ The workflow is defined in
 [`.github/workflows/android.yml`](.github/workflows/android.yml).
 
 - Pushes to `master`/`main` and pull requests run the native detector tests,
-  Android lint and `assembleDebug`, then upload the debug APK as a workflow
-  artifact.
+  JVM unit tests, Android lint and `assembleDebug`, then upload the debug APK
+  as a workflow artifact.
 - Pushes of tags matching `v*` additionally decode the release keystore, build
   a signed APK and AAB, verify both, and publish them as GitHub release assets
   named `MultiTuner-vX.Y.Z.apk` and `MultiTuner-vX.Y.Z.aab`.
@@ -277,8 +309,8 @@ The workflow is defined in
 3. Create and push an annotated tag:
 
    ```bash
-   git tag -a v0.0.7 -m "MultiTuner v0.0.7"
-   git push origin v0.0.7
+   git tag -a v0.0.8 -m "MultiTuner v0.0.8"
+   git push origin v0.0.8
    ```
 
 4. Watch the `Android CI` run in GitHub Actions. The signed APK and AAB appear
@@ -352,9 +384,11 @@ Store version. Uninstall the sideloaded app before installing from Play.
 │   │   ├── MainActivity.kt
 │   │   ├── TunerViewModel.kt
 │   │   ├── audio/          # AudioRecord capture, JNI bridge, test tone
-│   │   ├── model/          # Tuning model and presets
+│   │   ├── model/          # Tuning model, presets, string matching
+│   │   ├── tuner/          # Pure pitch display engine
 │   │   └── ui/             # Compose screen, gauges, theme
 │   ├── src/main/cpp/       # YIN detector and JNI entry point
+│   ├── src/test/           # JVM unit tests
 │   └── build.gradle.kts
 ├── docs/                   # GitHub Pages landing page, privacy policy, screenshots
 ├── store/                  # Play Store listing copy and graphics
@@ -404,8 +438,7 @@ The hosted privacy policy is at
 Issues and pull requests are welcome. Before opening a pull request, run:
 
 ```bash
-./native-tests/run.sh
-./gradlew lintDebug assembleDebug
+./scripts/test.sh
 ```
 
 Do not commit keystores, passwords or other signing material.

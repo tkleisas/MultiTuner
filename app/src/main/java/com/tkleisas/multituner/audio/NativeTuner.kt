@@ -1,5 +1,7 @@
 package com.tkleisas.multituner.audio
 
+import android.os.SystemClock
+
 internal class NativeTuner(
     private val sampleRate: Int,
     private val windowSize: Int = 4096,
@@ -22,6 +24,7 @@ internal class NativeTuner(
             confidence = result[1].toDouble(),
             rms = result[2].toDouble(),
             hasPitch = status == 2,
+            timestampMs = SystemClock.elapsedRealtime(),
         )
     }
 

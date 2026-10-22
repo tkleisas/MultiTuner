@@ -5,5 +5,5 @@ data class PitchFrame(
     val confidence: Double,
     val rms: Double,
     val hasPitch: Boolean,
-    val timestampMs: Long = android.os.SystemClock.elapsedRealtime(),
+    val timestampMs: Long,
 )

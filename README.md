@@ -8,9 +8,12 @@ MultiTuner is a fast, offline Android tuner for stringed instruments. It is buil
 around a native C++ YIN pitch detector and provides real-time note, cents, needle,
 strobe and per-course feedback.
 
-The app ships with presets for guitar, Greek bouzouki (3- and 4-course), saz and
-tambouras. It targets Android 10 and newer and is designed for both phones and
-tablets.
+The app ships with presets for guitar, Greek bouzouki (3- and 4-course), saz,
+tambouras, oud, laouto and Renaissance lute. It targets Android 10 and newer and
+is designed for both phones and tablets.
+
+See [`docs/DESIGN.md`](docs/DESIGN.md) for the product design, cassette recorder
+spec and full roadmap.
 
 ## Screenshots
 
@@ -42,7 +45,7 @@ bouzouki C-F-A-D. Bottom: the tuning picker and the tablet layout.
 - **Multiple visualisations** - large note name, cents readout, confidence,
   needle gauge, animated strobe band, input level meter and an `IN TUNE` state.
 - **Reference pitch** - adjustable A4 reference from 415 Hz to 466 Hz.
-- **Instrument presets** - guitar, bouzouki, saz and tambouras.
+- **Instrument presets** - guitar, bouzouki, saz, tambouras, oud, laouto and Renaissance lute.
 - **Profile persistence** - the selected tuning, course lock and reference pitch
   are restored on the next launch.
 - **Phone and tablet layouts** - portrait, landscape and wide-screen layouts.
@@ -61,6 +64,9 @@ bouzouki C-F-A-D. Bottom: the tuning picker and the tablet layout.
 | Bouzouki | Tetrachordo C-F-A-D, Tetrachordo D-G-B-E, Trichordo D-A-D, Trichordo D-G-D |
 | Saz | Bozuk (Kara) low A, Bozuk (Kara) high A, Bağlama low A, Bağlama high A |
 | Tambouras | **D-G-C (default)**, D-A-D, D-A |
+| Oud | Arabic/Greek C-F-A-D-G-C, Arabic D-G-A-D-G-C, Arabic F-A-D-G-C-F, Turkish Bolahenk |
+| Laouto | Mainland C-G-D-A, Cretan G-D-A-E, with octave-pair courses |
+| Lute | Renaissance 6-, 8- and 10-course tenor lute in G |
 
 Course notes are shown low to high unless the tuning is intentionally
 re-entrant. The bouzouki C-F-A-D preset includes the octave pairs on the C and F
@@ -70,8 +76,8 @@ Saz tuning names and octaves vary by instrument size and region. Both low-A and
 high-A variants are included for Bozuk and Bağlama; use the one that matches your
 instrument.
 
-New presets can be added in
-[`TuningLibrary.kt`](app/src/main/java/com/tkleisas/multituner/model/TuningLibrary.kt).
+Presets are data-driven and live in
+[`app/src/main/resources/tunings.json`](app/src/main/resources/tunings.json).
 
 ## How it works
 
@@ -388,9 +394,10 @@ Store version. Uninstall the sideloaded app before installing from Play.
 │   │   ├── tuner/          # Pure pitch display engine
 │   │   └── ui/             # Compose screen, gauges, theme
 │   ├── src/main/cpp/       # YIN detector and JNI entry point
+│   ├── src/main/resources/ # Data-driven tuning catalog
 │   ├── src/test/           # JVM unit tests
 │   └── build.gradle.kts
-├── docs/                   # GitHub Pages landing page, privacy policy, screenshots
+├── docs/                   # Design/roadmap, landing page, privacy policy, screenshots
 ├── store/                  # Play Store listing copy and graphics
 ├── native-tests/           # Host-side DSP tests
 ├── scripts/                # Release verification (16 KB page sizes)
@@ -400,17 +407,27 @@ Store version. Uninstall the sideloaded app before installing from Play.
 
 ## Adding a tuning
 
-Add a `Tuning` entry to
-[`TuningLibrary.kt`](app/src/main/java/com/tkleisas/multituner/model/TuningLibrary.kt).
-Each course contains one or more `TuningString(midi, centsOffset)` entries.
-`centsOffset` is available for future microtonal or per-string offsets.
+Add a preset to
+[`app/src/main/resources/tunings.json`](app/src/main/resources/tunings.json).
+Each course contains one or more strings. A string supports `midi`, an optional
+`centsOffset` for microtonal targets and an optional `label` for alternate note
+spelling.
 
 For octave-paired courses, provide both MIDI notes. For example, the bouzouki
 C course is:
 
-```kotlin
-course("C", 48, 60)
+```json
+{
+  "label": "C",
+  "strings": [
+    { "midi": 48 },
+    { "midi": 60 }
+  ]
+}
 ```
+
+The loader validates unique IDs, known families, valid MIDI notes and non-empty
+courses. Run `./gradlew testDebugUnitTest` after editing the catalog.
 
 ## Debug test tone
 
@@ -428,9 +445,11 @@ The hosted privacy policy is at
 
 ## Roadmap
 
+The full product plan is in [`docs/DESIGN.md`](docs/DESIGN.md). Near-term work:
+
 - Custom tuning editor with saved user tunings
-- Microtonal/makam per-string offsets and alternate temperaments
-- More instruments and regional presets
+- Verified microtonal/makam presets and alternate temperaments
+- Metronome, drum machine and cassette 4-track recorder
 - Optional polyphonic string detection
 
 ## Contributing

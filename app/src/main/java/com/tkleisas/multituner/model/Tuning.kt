@@ -8,14 +8,21 @@ enum class InstrumentFamily(val displayName: String) {
     BOUZOUKI("Bouzouki"),
     SAZ("Saz"),
     TAMBOURAS("Tambouras"),
+    OUD("Oud"),
+    LAOUTO("Laouto"),
+    LUTE("Lute"),
 }
 
 data class TuningString(
     val midi: Int,
     val centsOffset: Int = 0,
+    val label: String? = null,
 ) {
     fun targetFrequency(referenceA4: Double): Double =
         referenceA4 * 2.0.pow((midi - 69) / 12.0) * 2.0.pow(centsOffset / 1200.0)
+
+    fun displayLabel(preferFlats: Boolean = false): String =
+        label ?: NoteNames.label(midi, preferFlats)
 }
 
 data class Course(
@@ -25,7 +32,7 @@ data class Course(
     val noteLabel: String
         get() = strings
             .distinctBy { it.midi }
-            .joinToString("·") { NoteNames.label(it.midi) }
+            .joinToString("·") { it.displayLabel() }
 }
 
 data class Tuning(

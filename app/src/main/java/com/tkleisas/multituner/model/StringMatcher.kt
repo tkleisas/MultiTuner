@@ -7,6 +7,7 @@ data class StringMatch(
     val stringIndex: Int,
     val midi: Int,
     val cents: Double,
+    val label: String? = null,
 )
 
 object StringMatcher {
@@ -37,6 +38,7 @@ object StringMatcher {
                         stringIndex = stringIndex,
                         midi = string.midi,
                         cents = cents,
+                        label = string.label,
                     )
                 }
             }

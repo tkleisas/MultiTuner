@@ -28,8 +28,8 @@ android {
         applicationId = "com.tkleisas.multituner"
         minSdk = 29
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.0.7"
+        versionCode = 8
+        versionName = "0.1.0"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
@@ -114,4 +114,5 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling:1.7.6")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

@@ -131,7 +131,8 @@ class TunerDisplayEngine(
             hasPitch = true,
             inTune = inTune,
             displayMidi = displayMidi,
-            displayNote = NoteNames.label(displayMidi, tuning.preferFlats),
+            displayNote = matched?.label
+                ?: NoteNames.label(displayMidi, tuning.preferFlats),
             frequency = smoothedFrequency,
             cents = cents,
             confidence = smoothedConfidence,

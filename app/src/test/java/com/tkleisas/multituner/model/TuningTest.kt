@@ -47,6 +47,23 @@ class TuningTest {
     }
 
     @Test
+    fun displayLabelUsesOverrideOrNoteName() {
+        assertEquals("A↑", TuningString(69, label = "A↑").displayLabel())
+        assertEquals("A4", TuningString(69).displayLabel())
+        assertEquals("Eb4", TuningString(63).displayLabel(preferFlats = true))
+        assertEquals("D#4", TuningString(63).displayLabel(preferFlats = false))
+    }
+
+    @Test
+    fun courseNoteLabelUsesCustomLabels() {
+        val course = Course(
+            label = "1",
+            strings = listOf(TuningString(69, label = "A↑")),
+        )
+        assertEquals("A↑", course.noteLabel)
+    }
+
+    @Test
     fun tuningReportsCourseCount() {
         val tuning = Tuning(
             id = "test",

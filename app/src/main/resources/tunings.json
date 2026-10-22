@@ -1,0 +1,1675 @@
+{
+  "version": 1,
+  "tunings": [
+    {
+      "id": "guitar_standard",
+      "name": "Standard E",
+      "family": "GUITAR",
+      "description": "E2 · A2 · D3 · G3 · B3 · E4",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 40
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 59
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 64
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guitar_drop_d",
+      "name": "Drop D",
+      "family": "GUITAR",
+      "description": "D2 · A2 · D3 · G3 · B3 · E4",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 38
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 59
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 64
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guitar_eb",
+      "name": "Eb Standard",
+      "family": "GUITAR",
+      "description": "Eb2 · Ab2 · Db3 · Gb3 · Bb3 · Eb4",
+      "preferFlats": true,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 39
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 44
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 49
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 54
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 58
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 63
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guitar_d_standard",
+      "name": "D Standard",
+      "family": "GUITAR",
+      "description": "D2 · G2 · C3 · F3 · A3 · D4",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 38
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 43
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 48
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 53
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guitar_drop_c",
+      "name": "Drop C",
+      "family": "GUITAR",
+      "description": "C2 · G2 · C3 · F3 · A3 · D4",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 36
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 43
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 48
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 53
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guitar_c_standard",
+      "name": "C Standard",
+      "family": "GUITAR",
+      "description": "C2 · F2 · Bb2 · Eb3 · G3 · C4",
+      "preferFlats": true,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 36
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 41
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 46
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 51
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guitar_dadgad",
+      "name": "DADGAD",
+      "family": "GUITAR",
+      "description": "D2 · A2 · D3 · G3 · A3 · D4",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 38
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guitar_open_g",
+      "name": "Open G",
+      "family": "GUITAR",
+      "description": "D2 · G2 · D3 · G3 · B3 · D4",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 38
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 43
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 59
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guitar_open_d",
+      "name": "Open D",
+      "family": "GUITAR",
+      "description": "D2 · A2 · D3 · F#3 · A3 · D4",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 38
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 54
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guitar_open_e",
+      "name": "Open E",
+      "family": "GUITAR",
+      "description": "E2 · B2 · E3 · G#3 · B3 · E4",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 40
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 47
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 52
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 56
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 59
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 64
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guitar_baritone",
+      "name": "Baritone B",
+      "family": "GUITAR",
+      "description": "B1 · E2 · A2 · D3 · F#3 · B3",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 35
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 40
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 54
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 59
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guitar_7_standard",
+      "name": "7-String Standard",
+      "family": "GUITAR",
+      "description": "B1 · E2 · A2 · D3 · G3 · B3 · E4",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "7",
+          "strings": [
+            {
+              "midi": 35
+            }
+          ]
+        },
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 40
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 59
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 64
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bouzouki_cfad",
+      "name": "Tetrachordo C-F-A-D",
+      "family": "BOUZOUKI",
+      "description": "Greek 4-course. Octave pairs on C and F.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "C",
+          "strings": [
+            {
+              "midi": 48
+            },
+            {
+              "midi": 60
+            }
+          ]
+        },
+        {
+          "label": "F",
+          "strings": [
+            {
+              "midi": 53
+            },
+            {
+              "midi": 65
+            }
+          ]
+        },
+        {
+          "label": "A",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bouzouki_dgbe",
+      "name": "Tetrachordo D-G-B-E",
+      "family": "BOUZOUKI",
+      "description": "Guitar-like 4-course tuning.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "G",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "B",
+          "strings": [
+            {
+              "midi": 59
+            }
+          ]
+        },
+        {
+          "label": "E",
+          "strings": [
+            {
+              "midi": 64
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bouzouki_dad",
+      "name": "Trichordo D-A-D",
+      "family": "BOUZOUKI",
+      "description": "Classic 3-course rebetiko tuning. Octave pair on low D.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 50
+            },
+            {
+              "midi": 62
+            }
+          ]
+        },
+        {
+          "label": "A",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bouzouki_dgd",
+      "name": "Trichordo D-G-D",
+      "family": "BOUZOUKI",
+      "description": "Isio / tis psihis tuning.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 50
+            },
+            {
+              "midi": 62
+            }
+          ]
+        },
+        {
+          "label": "G",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "saz_bozuk_low",
+      "name": "Bozuk (Kara) — low A",
+      "family": "SAZ",
+      "description": "A2 · D3 · G3. Common long-neck saz tuning.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "Alt",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        },
+        {
+          "label": "Orta",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "Üst",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "saz_bozuk_high",
+      "name": "Bozuk (Kara) — high A",
+      "family": "SAZ",
+      "description": "A3 · D3 · G3. Re-entrant variant.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "Alt",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "Orta",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "Üst",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "saz_baglama_low",
+      "name": "Bağlama — low A",
+      "family": "SAZ",
+      "description": "A2 · D3 · E3. Common short-neck bağlama tuning.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "Alt",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        },
+        {
+          "label": "Orta",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "Üst",
+          "strings": [
+            {
+              "midi": 52
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "saz_baglama_high",
+      "name": "Bağlama — high A",
+      "family": "SAZ",
+      "description": "A3 · D3 · E3. Re-entrant variant.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "Alt",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "Orta",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "Üst",
+          "strings": [
+            {
+              "midi": 52
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tambouras_dgc",
+      "name": "Tambouras D-G-C",
+      "family": "TAMBOURAS",
+      "description": "Standard Greek tambouras tuning: D3 · G3 · C4.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "G",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "C",
+          "strings": [
+            {
+              "midi": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tambouras_dad",
+      "name": "Tambouras D-A-D",
+      "family": "TAMBOURAS",
+      "description": "Three-course Greek tambouras.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 50
+            },
+            {
+              "midi": 62
+            }
+          ]
+        },
+        {
+          "label": "A",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tambouras_da",
+      "name": "Tambouras D-A",
+      "family": "TAMBOURAS",
+      "description": "Two-string tambouras.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "A",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oud_arabic_modern",
+      "name": "Arabic / Greek C-F-A-D-G-C",
+      "family": "OUD",
+      "description": "C2 · F2 · A2 · D3 · G3 · C4. Common modern Arabic tuning, also used by Greek oud players.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 36
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 41
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oud_arabic",
+      "name": "Arabic D-G-A-D-G-C",
+      "family": "OUD",
+      "description": "D2 · G2 · A2 · D3 · G3 · C4. Older common Arabic tuning.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 38
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 43
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oud_arabic_high",
+      "name": "Arabic F-A-D-G-C-F",
+      "family": "OUD",
+      "description": "F2 · A2 · D3 · G3 · C4 · F4. Higher modern Arabic tuning.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 41
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 60
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 65
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oud_turkish_bolahenk",
+      "name": "Turkish Bolahenk",
+      "family": "OUD",
+      "description": "C#2 · F#2 · B2 · E3 · A3 · D4. Bolahenk tuning, equal-tempered approximation.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 37
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 42
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 47
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 52
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laouto_mainland",
+      "name": "Mainland Laouto C-G-D-A",
+      "family": "LAOUTO",
+      "description": "C3/C4 · G3/G4 · D3/D4 · A4. Mainland Greek laouto with octave-pair courses.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "C",
+          "strings": [
+            {
+              "midi": 48
+            },
+            {
+              "midi": 60
+            }
+          ]
+        },
+        {
+          "label": "G",
+          "strings": [
+            {
+              "midi": 55
+            },
+            {
+              "midi": 67
+            }
+          ]
+        },
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 50
+            },
+            {
+              "midi": 62
+            }
+          ]
+        },
+        {
+          "label": "A",
+          "strings": [
+            {
+              "midi": 69
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laouto_cretan",
+      "name": "Cretan Laouto G-D-A-E",
+      "family": "LAOUTO",
+      "description": "G2/G3 · D2/D3 · A2/A3 · E3. Cretan laouto with octave-pair courses.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "G",
+          "strings": [
+            {
+              "midi": 43
+            },
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "D",
+          "strings": [
+            {
+              "midi": 38
+            },
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "A",
+          "strings": [
+            {
+              "midi": 45
+            },
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "E",
+          "strings": [
+            {
+              "midi": 52
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lute_renaissance_6",
+      "name": "Renaissance Lute 6-course G",
+      "family": "LUTE",
+      "description": "G2/G3 · C3/C4 · F3/F4 · A3 · D4 · G4. Renaissance tenor lute in G.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 43
+            },
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 48
+            },
+            {
+              "midi": 60
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 53
+            },
+            {
+              "midi": 65
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 67
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lute_renaissance_8",
+      "name": "Renaissance Lute 8-course G",
+      "family": "LUTE",
+      "description": "D2/D3 · F2/F3 · G2/G3 · C3/C4 · F3/F4 · A3 · D4 · G4. Renaissance 8-course tenor lute in G.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "8",
+          "strings": [
+            {
+              "midi": 38
+            },
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "7",
+          "strings": [
+            {
+              "midi": 41
+            },
+            {
+              "midi": 53
+            }
+          ]
+        },
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 43
+            },
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 48
+            },
+            {
+              "midi": 60
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 53
+            },
+            {
+              "midi": 65
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 67
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lute_renaissance_10",
+      "name": "Renaissance Lute 10-course G",
+      "family": "LUTE",
+      "description": "C2/C3 · D2/D3 · Eb2/Eb3 · F2/F3 · G2/G3 · C3/C4 · F3/F4 · A3 · D4 · G4. Renaissance 10-course tenor lute in G.",
+      "preferFlats": true,
+      "courses": [
+        {
+          "label": "10",
+          "strings": [
+            {
+              "midi": 36
+            },
+            {
+              "midi": 48
+            }
+          ]
+        },
+        {
+          "label": "9",
+          "strings": [
+            {
+              "midi": 38
+            },
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "8",
+          "strings": [
+            {
+              "midi": 39
+            },
+            {
+              "midi": 51
+            }
+          ]
+        },
+        {
+          "label": "7",
+          "strings": [
+            {
+              "midi": 41
+            },
+            {
+              "midi": 53
+            }
+          ]
+        },
+        {
+          "label": "6",
+          "strings": [
+            {
+              "midi": 43
+            },
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "5",
+          "strings": [
+            {
+              "midi": 48
+            },
+            {
+              "midi": 60
+            }
+          ]
+        },
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 53
+            },
+            {
+              "midi": 65
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 67
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

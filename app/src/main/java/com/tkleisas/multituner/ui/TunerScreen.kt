@@ -27,7 +27,9 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -69,7 +71,6 @@ import com.tkleisas.multituner.TunerViewModel
 import com.tkleisas.multituner.audio.AudioStatus
 import com.tkleisas.multituner.model.Course
 import com.tkleisas.multituner.model.InstrumentFamily
-import com.tkleisas.multituner.model.NoteNames
 import com.tkleisas.multituner.model.Tuning
 import com.tkleisas.multituner.model.TuningLibrary
 import java.util.Locale
@@ -587,25 +588,48 @@ private fun CoursePanel(
 
         Spacer(Modifier.height(9.dp))
 
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            AutoChip(
-                selected = state.lockedCourseIndex == null,
-                onClick = onClearLock,
-            )
-            state.tuning.courses.forEachIndexed { index, course ->
-                CourseChip(
-                    course = course,
-                    preferFlats = state.tuning.preferFlats,
-                    isActive = state.activeCourseIndex == index,
-                    isLocked = state.lockedCourseIndex == index,
-                    inTune = state.inTune && state.activeCourseIndex == index,
-                    activeMidi = state.displayMidi.takeIf { state.activeCourseIndex == index },
-                    cents = state.cents.takeIf { state.activeCourseIndex == index },
-                    onClick = { onToggleCourse(index) },
+        if (state.tuning.courseCount > 6) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                item {
+                    AutoChip(
+                        selected = state.lockedCourseIndex == null,
+                        onClick = onClearLock,
+                    )
+                }
+                itemsIndexed(state.tuning.courses) { index, course ->
+                    CourseChip(
+                        course = course,
+                        preferFlats = state.tuning.preferFlats,
+                        isActive = state.activeCourseIndex == index,
+                        isLocked = state.lockedCourseIndex == index,
+                        inTune = state.inTune && state.activeCourseIndex == index,
+                        activeMidi = state.displayMidi.takeIf { state.activeCourseIndex == index },
+                        cents = state.cents.takeIf { state.activeCourseIndex == index },
+                        onClick = { onToggleCourse(index) },
+                    )
+                }
+            }
+        } else {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AutoChip(
+                    selected = state.lockedCourseIndex == null,
+                    onClick = onClearLock,
                 )
+                state.tuning.courses.forEachIndexed { index, course ->
+                    CourseChip(
+                        course = course,
+                        preferFlats = state.tuning.preferFlats,
+                        isActive = state.activeCourseIndex == index,
+                        isLocked = state.lockedCourseIndex == index,
+                        inTune = state.inTune && state.activeCourseIndex == index,
+                        activeMidi = state.displayMidi.takeIf { state.activeCourseIndex == index },
+                        cents = state.cents.takeIf { state.activeCourseIndex == index },
+                        onClick = { onToggleCourse(index) },
+                    )
+                }
             }
         }
     }
@@ -705,7 +729,7 @@ private fun CourseChip(
                 uniqueStrings.forEach { string ->
                     val highlighted = isActive && string.midi == activeMidi
                     Text(
-                        text = NoteNames.label(string.midi, preferFlats),
+                        text = string.displayLabel(preferFlats),
                         style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp),
                         color = if (highlighted) InTuneGreen else MaterialTheme.colorScheme.onSurface,
                         fontWeight = if (highlighted) FontWeight.Bold else FontWeight.Medium,
@@ -858,7 +882,7 @@ private fun TuningPickerDialog(
                     }
                 }
                 Spacer(Modifier.height(10.dp))
-                LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
+                LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
                     items(TuningLibrary.forFamily(family), key = { it.id }) { tuning ->
                         val selected = tuning.id == current.id
                         Surface(

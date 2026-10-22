@@ -112,6 +112,21 @@ class StringMatcherTest {
     }
 
     @Test
+    fun matchCarriesCustomLabel() {
+        val tuning = Tuning(
+            id = "custom",
+            name = "Custom",
+            family = InstrumentFamily.GUITAR,
+            courses = listOf(
+                Course("1", listOf(TuningString(69, label = "A↑"))),
+            ),
+        )
+        val match = StringMatcher.closest(440.0, tuning, 440.0)
+        assertNotNull(match)
+        assertEquals("A↑", match!!.label)
+    }
+
+    @Test
     fun centsOffsetIsRespected() {
         val tuning = Tuning(
             id = "custom",

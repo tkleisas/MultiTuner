@@ -8,7 +8,7 @@
 - **App or game:** App
 - **Free or paid:** Free
 - **Category:** Music & Audio
-- **Tags:** Music, Tuner, Guitar
+- **Tags:** Music, Tuner, Guitar, Oud, Lute
 - **Contact email:** tasos.kleisas@gmail.com
 - **Website:** https://github.com/tkleisas/MultiTuner
 - **Privacy policy:** https://tkleisas.github.io/MultiTuner/privacy-policy.html
@@ -16,7 +16,7 @@
 ## Short description
 
 ```
-Offline tuner for guitar, bouzouki, saz and tambouras.
+Offline tuner for guitar, bouzouki, saz, oud, lute and tambouras.
 ```
 
 ## Full description
@@ -24,12 +24,15 @@ Offline tuner for guitar, bouzouki, saz and tambouras.
 ```
 MultiTuner is a fast, offline tuner for stringed instruments. It shows a large note readout, a cents needle, an animated strobe and live feedback for every string or course in the selected tuning.
 
-Built for guitar, Greek bouzouki, saz and tambouras:
+Built for guitar, Greek bouzouki, saz, tambouras, oud, laouto and Renaissance lute:
 
 Guitar: Standard E, Drop D, Eb Standard, D Standard, Drop C, C Standard, DADGAD, Open G, Open D, Open E, Baritone B and 7-string Standard.
 Bouzouki: 4-course C-F-A-D and D-G-B-E; 3-course D-A-D and D-G-D.
 Saz: Bozuk (Kara) and Bağlama in low-A and high-A variants.
 Tambouras: D-G-C (default), D-A-D and D-A.
+Oud: Arabic/Greek C-F-A-D-G-C, Arabic D-G-A-D-G-C, F-A-D-G-C-F and Turkish Bolahenk.
+Laouto: mainland C-G-D-A and Cretan G-D-A-E, including octave-pair courses.
+Lute: Renaissance 6-, 8- and 10-course tenor lute in G.
 
 HOW IT WORKS
 Play one string at a time. MultiTuner detects the pitch with a native YIN detector, finds the nearest string or course, and shows how many cents you are away from the target. Tap a course chip to lock the tuner to that course when you want to focus on a single string. The needle, strobe and colour feedback make it easy to see when you are in tune.
@@ -113,13 +116,16 @@ final result in Play Console.
 
 No test account or login is required.
 
-## Release notes for v0.0.7
+## Release notes for v0.1.0
 
 ```
 Initial Play Store release.
 
-- Native YIN pitch detection for guitar, bouzouki, saz and tambouras
-- Tambouras D-G-C default tuning
+- Native YIN pitch detection for guitar, bouzouki, saz, tambouras, oud, laouto and lute
+- New oud, laouto and Renaissance lute presets
+- Data-driven tuning catalog with microtonal per-string offsets
+- Compact course strip for 8- and 10-course instruments
+- Existing guitar, bouzouki, saz and tambouras presets preserved
 - Auto string detection and manual course lock
 - Needle, strobe and per-course visual feedback
 - A4 reference from 415 to 466 Hz
@@ -167,7 +173,7 @@ An **organization** account does not have this 12-tester requirement.
 - [ ] Set the privacy policy URL
 - [ ] Complete Ads, App access, Content rating, Target audience and Data safety
 - [ ] Confirm target API 36 is reported for the AAB
-- [ ] Upload `MultiTuner-v0.0.7.aab` to Internal testing first
+- [ ] Upload `MultiTuner-v0.1.0.aab` to Internal testing first
 - [ ] Test the Play-signed build on a physical device
 - [ ] Run the pre-launch report
 - [ ] Complete closed testing if required

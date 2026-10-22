@@ -1,8 +1,12 @@
 package com.tkleisas.multituner.tuner
 
 import com.tkleisas.multituner.audio.PitchFrame
+import com.tkleisas.multituner.model.Course
+import com.tkleisas.multituner.model.InstrumentFamily
 import com.tkleisas.multituner.model.PitchMath
+import com.tkleisas.multituner.model.Tuning
 import com.tkleisas.multituner.model.TuningLibrary
+import com.tkleisas.multituner.model.TuningString
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -156,6 +160,26 @@ class TunerDisplayEngineTest {
         assertEquals(0, high.activeCourseIndex ?: -1)
         assertEquals(1, high.activeStringIndex ?: -1)
         assertEquals(60, high.displayMidi ?: -1)
+    }
+
+    @Test
+    fun microtonalStringLabelIsShown() {
+        val tuning = Tuning(
+            id = "micro",
+            name = "Micro",
+            family = InstrumentFamily.OUD,
+            courses = listOf(
+                Course("1", listOf(TuningString(69, label = "A↑"))),
+            ),
+        )
+        val update = TunerDisplayEngine().onFrame(
+            frame(440.0),
+            tuning,
+            440.0,
+            null,
+        )
+
+        assertEquals("A↑", update.displayNote)
     }
 
     @Test

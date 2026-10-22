@@ -3,8 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MultiTuner — String instrument tuner for Android</title>
-  <meta name="description" content="An offline Android tuner for guitar, bouzouki, saz and tambouras with native YIN pitch detection.">
+  <title>MultiTuner — Tuner, metronome, drums and 4-track cassette recorder</title>
+  <meta name="description" content="MultiTuner is an offline Android tuner, metronome, drum machine and four-track cassette recorder for guitar, bouzouki, saz, tambouras, oud, laouto and lute.">
+  <meta property="og:title" content="MultiTuner">
+  <meta property="og:description" content="Tune, practise and record on Android. Four-track cassette, reverb/delay sends and WAV/OGG mix export.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://tkleisas.github.io/MultiTuner/screenshots/cassette.png">
   <style>
     :root {
       color-scheme: dark;
@@ -14,19 +18,22 @@
       --text: #e6f2e9;
       --muted: #8fa398;
       --green: #5ce07a;
+      --yellow: #f4c25e;
     }
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       margin: 0;
       min-height: 100vh;
       background:
-        radial-gradient(circle at 18% 18%, rgba(92, 224, 122, .10), transparent 34rem),
+        radial-gradient(circle at 18% 8%, rgba(92, 224, 122, .10), transparent 34rem),
         var(--bg);
       color: var(--text);
       font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     }
+    a { color: var(--green); }
     main {
-      max-width: 980px;
+      max-width: 1080px;
       margin: 0 auto;
       padding: 64px 24px 80px;
     }
@@ -49,8 +56,14 @@
       line-height: .98;
       letter-spacing: -.04em;
     }
+    h2 {
+      margin: 0 0 10px;
+      font-size: clamp(24px, 3vw, 34px);
+      letter-spacing: -.02em;
+    }
+    h3 { margin: 0 0 6px; font-size: 17px; }
     .lead {
-      max-width: 34rem;
+      max-width: 38rem;
       margin: 0 0 26px;
       color: var(--muted);
       font-size: 19px;
@@ -78,6 +91,12 @@
       border-radius: 28px;
       box-shadow: 0 30px 80px rgba(0, 0, 0, .45);
     }
+    .instruments {
+      margin-top: 28px;
+      color: var(--muted);
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .04em;
+    }
     .features {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -90,26 +109,91 @@
       border-radius: 16px;
       background: var(--panel);
     }
-    .feature h2 { margin: 0 0 6px; font-size: 16px; }
     .feature p { margin: 0; color: var(--muted); font-size: 14px; }
-    .instruments {
-      margin-top: 28px;
+    .section {
+      margin-top: 72px;
+    }
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+    .section-head p {
+      max-width: 40rem;
+      margin: 0;
       color: var(--muted);
-      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
-      letter-spacing: .04em;
+    }
+    .showcase {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .showcase article {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+    .showcase img {
+      display: block;
+      width: 100%;
+      background: #0b0f0c;
+    }
+    .showcase .copy { padding: 14px 16px 18px; }
+    .showcase p { margin: 0; color: var(--muted); font-size: 14px; }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .gallery a {
+      display: block;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--panel);
+      text-decoration: none;
+    }
+    .gallery img {
+      display: block;
+      width: 100%;
+    }
+    .gallery span {
+      display: block;
+      padding: 10px 12px 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .note {
+      margin-top: 28px;
+      padding: 16px 18px;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--green);
+      border-radius: 12px;
+      background: rgba(17, 24, 19, .7);
+      color: var(--muted);
+      font-size: 14px;
     }
     footer {
-      margin-top: 56px;
+      margin-top: 64px;
       padding-top: 20px;
       border-top: 1px solid var(--border);
       color: var(--muted);
       font-size: 14px;
     }
     footer a { color: var(--green); }
-    @media (max-width: 760px) {
+    @media (max-width: 860px) {
       .hero { grid-template-columns: 1fr; gap: 28px; }
-      .features { grid-template-columns: 1fr; }
+      .features, .showcase { grid-template-columns: 1fr 1fr; }
+      .gallery { grid-template-columns: 1fr 1fr; }
       .shot { width: min(100%, 300px); }
+    }
+    @media (max-width: 560px) {
+      main { padding-top: 42px; }
+      .features, .showcase, .gallery { grid-template-columns: 1fr; }
+      .section-head { display: block; }
     }
   </style>
 </head>
@@ -117,33 +201,117 @@
   <main>
     <section class="hero">
       <div>
-        <p class="eyebrow">Android · Offline · No ads</p>
+        <p class="eyebrow">Android 10+ · Offline · v0.7.0</p>
         <h1>MultiTuner</h1>
         <p class="lead">
-          A precise tuner for guitar, Greek bouzouki, saz and tambouras.
-          Native YIN pitch detection, per-string feedback, needle and strobe.
+          A precise tuner, metronome, drum machine and four-track cassette
+          recorder for string players. Native pitch detection, tape character,
+          reverb and delay sends, and a stereo mix export you can share.
         </p>
         <div class="actions">
-          <a class="button" href="https://github.com/tkleisas/MultiTuner/releases">Download</a>
+          <a class="button" href="https://github.com/tkleisas/MultiTuner/releases/tag/v0.7.0">Download v0.7.0</a>
           <a class="button secondary" href="https://github.com/tkleisas/MultiTuner">GitHub</a>
         </div>
-        <p class="instruments">Guitar · Bouzouki · Saz · Tambouras</p>
+        <p class="instruments">
+          Tuner · Metronome · Drums · Cassette · Reverb · Delay · WAV/OGG export
+        </p>
       </div>
-      <img class="shot" src="screenshots/in-tune.png" alt="MultiTuner showing D4 in tune on a bouzouki">
+      <img class="shot" src="screenshots/cassette.png" alt="MultiTuner four-track cassette recorder">
     </section>
 
-    <section class="features">
+    <section class="features" aria-label="Features">
       <div class="feature">
-        <h2>String-aware</h2>
-        <p>Detects the nearest string or course and highlights its live cents offset.</p>
+        <h3>Tuner</h3>
+        <p>32 presets for guitar, bouzouki, saz, tambouras, oud, laouto and lute. String-aware cents feedback with needle, strobe and input meter.</p>
       </div>
       <div class="feature">
-        <h2>Visual tuning</h2>
-        <p>Large note readout, needle, animated strobe and input level.</p>
+        <h3>Metronome</h3>
+        <p>30–300 BPM, tap tempo, beats per bar, subdivisions, accent and volume. Sample-accurate on-device audio.</p>
       </div>
       <div class="feature">
-        <h2>Private by design</h2>
-        <p>Audio is processed on-device. No internet permission, no accounts, no tracking.</p>
+        <h3>Drums</h3>
+        <p>Eight synthesized pieces, a 16-step sequencer, accent steps, swing and Rock/Funk/House/Break patterns.</p>
+      </div>
+      <div class="feature">
+        <h3>Cassette recorder</h3>
+        <p>Full-width four-track tape, 15 minutes, 48 kHz/16-bit mono takes. Arm, overdub, pan, mute/solo, REW/FF and flip/reverse.</p>
+      </div>
+      <div class="feature">
+        <h3>FX and mixdown</h3>
+        <p>Per-deck reverb and delay sends with master returns, tape emulation, varispeed and stereo WAV/OGG export.</p>
+      </div>
+      <div class="feature">
+        <h3>Private by design</h3>
+        <p>No internet permission, accounts or tracking. Tuner audio is processed on-device; recordings stay in app storage until you share an export.</p>
+      </div>
+    </section>
+
+    <section class="section" id="cassette">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">New in 0.7.0</p>
+          <h2>Record, colour, share</h2>
+        </div>
+        <p>
+          Four mono tracks on a 15-minute tape, with per-deck sends into a
+          reverb and delay bus. Export a forward 1× stereo mix as lossless WAV
+          or compact OGG Opus through the Android share sheet.
+        </p>
+      </div>
+      <div class="showcase">
+        <article>
+          <img src="screenshots/cassette-decks.png" alt="Cassette deck sends and level meters">
+          <div class="copy">
+            <h3>Deck sends and levels</h3>
+            <p>Volume, constant-power pan, mute/solo, REV/DLY sends, record gain and live input/output meters.</p>
+          </div>
+        </article>
+        <article>
+          <img src="screenshots/cassette-fx.png" alt="Master reverb and delay controls">
+          <div class="copy">
+            <h3>Master reverb and delay</h3>
+            <p>Reverb return, size and damping; delay return, time, feedback and tone. Both sit before the tape stage.</p>
+          </div>
+        </article>
+        <article>
+          <img src="screenshots/cassette-export.png" alt="Export cassette as WAV or OGG">
+          <div class="copy">
+            <h3>Stereo mix export</h3>
+            <p>Forward 1× mix with deck settings, sends, FX and tape. WAV is lossless; OGG Opus is smaller for sharing.</p>
+          </div>
+        </article>
+      </div>
+      <p class="note">
+        Export excludes the metronome and drum guide tracks. MP3 is not offered
+        because Android does not provide a dependable built-in MP3 encoder.
+      </p>
+    </section>
+
+    <section class="section" id="screenshots">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Screenshots</p>
+          <h2>The whole toolkit</h2>
+        </div>
+        <p>One app for tuning, practice and four-track ideas. Designed for phones and tablets.</p>
+      </div>
+      <div class="gallery">
+        <a href="screenshots/main-guitar.png">
+          <img src="screenshots/main-guitar.png" alt="Guitar tuner">
+          <span>Tuner</span>
+        </a>
+        <a href="screenshots/metronome.png">
+          <img src="screenshots/metronome.png" alt="Metronome">
+          <span>Metronome</span>
+        </a>
+        <a href="screenshots/drums.png">
+          <img src="screenshots/drums.png" alt="Drum machine">
+          <span>Drums</span>
+        </a>
+        <a href="screenshots/cassette.png">
+          <img src="screenshots/cassette.png" alt="Four-track cassette recorder">
+          <span>Cassette</span>
+        </a>
       </div>
     </section>
 
@@ -152,6 +320,9 @@
         MIT licensed. <a href="privacy-policy.html">Privacy policy</a> ·
         <a href="https://github.com/tkleisas/MultiTuner">Source</a> ·
         <a href="https://github.com/tkleisas/MultiTuner/releases">Releases</a>
+      </p>
+      <p>
+        Guitar · Bouzouki · Saz · Tambouras · Oud · Laouto · Lute
       </p>
     </footer>
   </main>

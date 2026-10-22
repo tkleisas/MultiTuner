@@ -5,9 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tkleisas.multituner.ui.MainScreen
 import com.tkleisas.multituner.ui.MultiTunerTheme
-import com.tkleisas.multituner.ui.TunerRoute
 
 class MainActivity : ComponentActivity() {
 
@@ -15,14 +14,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        val viewModel = ViewModelProvider(this)[TunerViewModel::class.java]
+        val tunerViewModel = ViewModelProvider(this)[TunerViewModel::class.java]
+        val metronomeViewModel = ViewModelProvider(this)[MetronomeViewModel::class.java]
 
         setContent {
             MultiTunerTheme {
-                val state = viewModel.uiState.collectAsStateWithLifecycle()
-                TunerRoute(
-                    state = state.value,
-                    viewModel = viewModel,
+                MainScreen(
+                    tunerViewModel = tunerViewModel,
+                    metronomeViewModel = metronomeViewModel,
                 )
             }
         }

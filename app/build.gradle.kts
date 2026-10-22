@@ -28,8 +28,8 @@ android {
         applicationId = "com.tkleisas.multituner"
         minSdk = 29
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.1.0"
+        versionCode = 9
+        versionName = "0.2.0"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
@@ -38,6 +38,7 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags += listOf("-std=c++17", "-Wall", "-Wextra")
+                arguments += listOf("-DANDROID_STL=c++_shared")
             }
         }
     }
@@ -81,6 +82,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        prefab = true
     }
 
     externalNativeBuild {
@@ -109,7 +111,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-text:1.7.6")
     implementation("androidx.compose.ui:ui-tooling-preview:1.7.6")
     implementation("androidx.compose.foundation:foundation:1.7.6")
+    implementation("androidx.compose.animation:animation-core:1.7.6")
     implementation("androidx.compose.material3:material3:1.3.1")
+    implementation("com.google.oboe:oboe:1.11.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling:1.7.6")
 

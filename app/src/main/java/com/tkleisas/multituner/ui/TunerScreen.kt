@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -55,7 +54,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,7 +82,6 @@ fun TunerRoute(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val view = LocalView.current
     var hasPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
@@ -152,11 +149,6 @@ fun TunerRoute(
         }
     }
 
-    DisposableEffect(Unit) {
-        view.keepScreenOn = true
-        onDispose { view.keepScreenOn = false }
-    }
-
     if (!hasPermission) {
         PermissionScreen(
             denied = permissionDenied,
@@ -193,7 +185,6 @@ private fun PermissionScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(DeepBackground)
-            .systemBarsPadding()
             .padding(28.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -267,8 +258,7 @@ private fun TunerScreen(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(DeepBackground)
-            .systemBarsPadding(),
+            .background(DeepBackground),
     ) {
         val isWide = maxWidth >= 720.dp
         val centered = isWide && maxHeight >= 560.dp

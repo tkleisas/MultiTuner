@@ -2,12 +2,19 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT="${TMPDIR:-/tmp}/multituner_yin_test"
+OUT_DIR="${TMPDIR:-/tmp}"
 
 g++ -std=c++17 -O2 \
     -I "$ROOT/app/src/main/cpp" \
     "$ROOT/native-tests/yin_test.cpp" \
     "$ROOT/app/src/main/cpp/yin.cpp" \
-    -o "$OUT"
+    -o "$OUT_DIR/multituner_yin_test"
+"$OUT_DIR/multituner_yin_test"
 
-"$OUT"
+g++ -std=c++17 -O2 \
+    -I "$ROOT/app/src/main/cpp" \
+    "$ROOT/native-tests/metronome_test.cpp" \
+    "$ROOT/app/src/main/cpp/audio/Transport.cpp" \
+    "$ROOT/app/src/main/cpp/audio/Metronome.cpp" \
+    -o "$OUT_DIR/multituner_metronome_test"
+"$OUT_DIR/multituner_metronome_test"

@@ -8,7 +8,7 @@
 - **App or game:** App
 - **Free or paid:** Free
 - **Category:** Music & Audio
-- **Tags:** Music, Tuner, Guitar, Oud, Lute
+- **Tags:** Music, Tuner, Metronome, Guitar, Oud, Lute
 - **Contact email:** tasos.kleisas@gmail.com
 - **Website:** https://github.com/tkleisas/MultiTuner
 - **Privacy policy:** https://tkleisas.github.io/MultiTuner/privacy-policy.html
@@ -16,13 +16,13 @@
 ## Short description
 
 ```
-Offline tuner for guitar, bouzouki, saz, oud, lute and tambouras.
+Tuner and metronome for guitar, bouzouki, saz, oud, lute and more.
 ```
 
 ## Full description
 
 ```
-MultiTuner is a fast, offline tuner for stringed instruments. It shows a large note readout, a cents needle, an animated strobe and live feedback for every string or course in the selected tuning.
+MultiTuner is a fast, offline tuner and metronome for stringed instruments. It shows a large note readout, a cents needle, an animated strobe and live feedback for every string or course in the selected tuning.
 
 Built for guitar, Greek bouzouki, saz, tambouras, oud, laouto and Renaissance lute:
 
@@ -36,6 +36,13 @@ Lute: Renaissance 6-, 8- and 10-course tenor lute in G.
 
 HOW IT WORKS
 Play one string at a time. MultiTuner detects the pitch with a native YIN detector, finds the nearest string or course, and shows how many cents you are away from the target. Tap a course chip to lock the tuner to that course when you want to focus on a single string. The needle, strobe and colour feedback make it easy to see when you are in tune.
+
+METRONOME
+- 30–300 BPM with tap tempo and a large tempo display
+- 2, 3, 4 or 6 beats per bar
+- Quarter, eighth and sixteenth subdivisions
+- Accent toggle and volume control
+- Sample-accurate on-device audio with a shared transport
 
 FEATURES
 - Native C++ YIN pitch detection
@@ -58,10 +65,10 @@ MultiTuner is suitable for practice, instrument setup and live tuning.
 |---|---|
 | App icon (512 x 512) | `store/icon-512.png` |
 | Feature graphic (1024 x 500) | `store/feature-graphic-1024x500.png` |
-| Phone screenshot 1 | `store/screenshots/01-guitar-standard-e.png` |
-| Phone screenshot 2 | `store/screenshots/02-bouzouki-in-tune.png` |
-| Phone screenshot 3 | `store/screenshots/03-tambouras-dgc.png` |
-| Phone screenshot 4 | `store/screenshots/04-bouzouki-cfad.png` |
+| Phone screenshot 1 | `store/screenshots/01-tuner.png` |
+| Phone screenshot 2 | `store/screenshots/02-in-tune.png` |
+| Phone screenshot 3 | `store/screenshots/03-metronome.png` |
+| Phone screenshot 4 | `store/screenshots/04-lute-10-course.png` |
 | Phone screenshot 5 | `store/screenshots/05-tuning-picker.png` |
 | Tablet screenshot | `store/screenshots/06-tablet-layout.png` |
 
@@ -113,26 +120,28 @@ final result in Play Console.
 3. Play a single string near the microphone.
 4. Tap a course chip to lock a string; tap it again to return to auto mode.
 5. Adjust the A4 reference with the A4 button and pause/resume with the Audio button.
+6. Open Metronome from the bottom navigation; press START and verify the beat indicator and click playback.
 
 No test account or login is required.
 
-## Release notes for v0.1.0
+## Release notes for v0.2.0
 
 ```
-Initial Play Store release.
-
+- Added a metronome with tap tempo, 30–300 BPM, beats per bar, subdivisions, accent and volume
+- Added bottom navigation between Tuner and Metronome
+- Shared on-device transport for future recorder and drum modules
+- Metronome audio runs in the foreground and stops when the app is backgrounded
 - Native YIN pitch detection for guitar, bouzouki, saz, tambouras, oud, laouto and lute
-- New oud, laouto and Renaissance lute presets
+- Oud, laouto and Renaissance lute presets from 0.1.0
 - Data-driven tuning catalog with microtonal per-string offsets
 - Compact course strip for 8- and 10-course instruments
-- Existing guitar, bouzouki, saz and tambouras presets preserved
 - Auto string detection and manual course lock
 - Needle, strobe and per-course visual feedback
 - A4 reference from 415 to 466 Hz
-- Phone and tablet layouts
+- Phone and tablet layouts, including navigation rail on wide screens
 - 16 KB page size support for Android 15+ devices
 - Optimized release build with R8 code and resource shrinking
-- Automated tests for pitch math, tunings, string matching and display logic
+- Automated JVM and native tests
 - Offline, no ads, no data collection
 ```
 
@@ -173,7 +182,7 @@ An **organization** account does not have this 12-tester requirement.
 - [ ] Set the privacy policy URL
 - [ ] Complete Ads, App access, Content rating, Target audience and Data safety
 - [ ] Confirm target API 36 is reported for the AAB
-- [ ] Upload `MultiTuner-v0.1.0.aab` to Internal testing first
+- [ ] Upload `MultiTuner-v0.2.0.aab` to Internal testing first
 - [ ] Test the Play-signed build on a physical device
 - [ ] Run the pre-launch report
 - [ ] Complete closed testing if required

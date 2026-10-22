@@ -1,6 +1,6 @@
 # MultiTuner — Product Design and Roadmap
 
-Status: living document. v0.1.0 instrument expansion implemented.
+Status: living document. v0.2.0 core metronome implemented (foreground audio).
 
 ## Vision
 
@@ -78,7 +78,8 @@ labels. Verified makam/maqam presets can be added without code changes.
 - BPM, tap tempo, time signature, subdivisions, accents and count-in.
 - Sample-accurate scheduling from the audio clock.
 - Standalone screen and reused transport inside the cassette recorder.
-- Background playback via a media foreground service.
+- Foreground audio shipped in 0.2.0; background playback via a media foreground
+  service is deferred to 0.2.x.
 
 ## 4. Drums
 
@@ -206,9 +207,9 @@ settings and per-track pan/volume/mute metadata.
 
 | Version | Scope |
 |---|---|
-| **0.1.0** | Data-driven tunings, Oud/Laouto/Lute presets, microtonal offsets, compact many-course UI, tests |
-| **0.2.0** | Oboe audio engine, shared transport, metronome |
-| **0.3.0** | Rhythm box and step-sequencer drum machine |
+| **0.1.0** | Shipped: data-driven tunings, Oud/Laouto/Lute presets, microtonal offsets, compact many-course UI, tests |
+| **0.2.0** | Shipped: Oboe audio engine, shared transport, foreground metronome |
+| **0.3.0** | Next: rhythm box and step-sequencer drum machine |
 | **0.4.0** | Full-width 4-track cassette recorder, flip/reverse, pan, playback varispeed 0.5×–2×, master tape emulation |
 | **0.5.0** | Record varispeed, per-track tape, monitor-through-tape, export/share, integration polish |
 

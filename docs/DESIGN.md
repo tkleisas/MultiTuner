@@ -1,6 +1,6 @@
 # MultiTuner — Product Design and Roadmap
 
-Status: living document. v0.3.0 drum machine implemented (foreground audio).
+Status: living document. v0.7.0 cassette recorder, master FX and export implemented.
 
 ## Vision
 
@@ -125,57 +125,92 @@ When flipped:
 
 ### Cassette UI
 
-- Cassette library/shelf with create, rename, duplicate and delete
+Shipped in 0.4.0 and 0.7.0:
+
+- Cassette library with create, select and delete; rename/duplicate are planned
 - User-selectable cassette shell colors
-- Animated supply/take-up reels; reel speed and direction follow transport and
-  varispeed; supply radius shrinks and take-up radius grows
-- Flip animation that rotates the shell and swaps reel roles
-- Tape counter, side/reverse indicator, elapsed and remaining time
-- Four track strips: arm, record, volume, pan, mute, solo, meter and waveform
-- Varispeed control and master tape-emulation panel on the deck
+- Animated reels; both reels rotate in the transport direction and follow
+  varispeed
+- Tape counter, side/reverse indicator and total length
+- Four track strips: arm, volume, constant-power pan, mute, solo and per-deck
+  reverb/delay sends
+- REW/FF buttons that wind 10 seconds of tape content per tap
+- Record input gain (0–200%) plus REC IN and TAPE OUT level meters
+- Varispeed control and cassette-bus tape-emulation panel on the deck
+- Master reverb and delay returns with size/damping and time/feedback/tone
+- Export button for WAV/OGG stereo mixdowns and Android share-sheet handoff
+
+Planned polish: variable reel radii, a flip animation, per-strip meters and
+waveforms, and a larger deck-style transport.
 
 ### Session layout
 
 ```
-cassettes/<id>/
-  cassette.json
+<app files>/cassettes.json
+<external app files>/cassettes/<id>/
   track-1.wav
   track-2.wav
   track-3.wav
   track-4.wav
 ```
 
-`cassette.json` stores name, shell color, duration limit, varispeed, tape
-settings and per-track pan/volume/mute metadata.
+`files/cassettes.json` stores the cassette library, selected cassette, shell
+colors, per-track file paths and start offsets, and per-deck
+pan/volume/mute/solo/FX-send metadata. Varispeed, flip, tape and master FX
+settings live in app preferences.
 
 ### Recording and storage
 
-- Stream PCM16 WAV to app-specific storage; do not hold 15-minute takes in RAM
-- Check free space before recording and show a storage estimate
-- Exclude cassette audio from Android backup
+Shipped:
+
+- Stream PCM16 mono WAV at 48 kHz to app-specific storage; takes are never held
+  in RAM
+- Record the current transport position and overdub while existing tracks play
+- Store recordings locally; they are not transmitted
+- Stop and finalize the take when the app is backgrounded
+- Exclude cassette audio and metadata from Android cloud backup and transfer
+- Export a forward 1× stereo mix with deck settings, sends, master FX and tape
+  to WAV or OGG Opus, trimmed to the last take
+- Hand exports to the Android share sheet through `FileProvider`
+- Exclude metronome/drums from exports; MP3 is not offered because Android has
+  no dependable system MP3 encoder
+
+Planned:
+
+- Free-space estimate before recording
 - Foreground recording service for background recording
-- Mixdown/export to stereo WAV; share via FileProvider
-- Recordings never leave the device unless the user exports them
+- Record-varispeed and export presets
+- Per-track FX inserts and monitor-through-tape
 
 ## 6. Varispeed
 
 - Range **0.5×–2.0×**, default 1.0×
-- Playback-only in 0.4.0; recording runs at 1×
-- Smooth ratio changes; no clicks
-- Display ratio, percentage and semitones/octaves
-- Metronome and drums follow varispeed; show nominal and effective BPM
-- High-quality variable-rate windowed-sinc resampler with anti-aliasing
-- Record-varispeed with takes resampled into the session timeline in 0.5.0
+- Playback-only through 0.7.0; recording runs at 1×
+- Display ratio and semitones; ratio changes currently apply immediately
+- Metronome and drums follow varispeed; effective BPM display is planned
+- Windowed-sinc resampling with anti-aliasing for read rates above 1×
+- REW/FF strokes are content-time based, so each tap moves 10 seconds of tape
+  regardless of varispeed
+- Record-varispeed with takes resampled into the session timeline is planned
 
 ## 7. Tape emulation
 
-- Master-bus insert after mix and varispeed, with bypass
+- Inserted on the cassette bus after the four-deck mix and varispeed, with bypass
 - Ported from yawn's `TapeEmulation` (MIT): asymmetric saturation, wow, flutter,
   hiss, HF rolloff/tone, wet/dry, 2× oversampling
-- Scale wow/flutter rate and tone with varispeed
-- Tape off by default, with a subtle preset available
-- Compensate for the effect's ~10 ms delay in monitoring and overdubs
-- Per-track tape and monitor-through-tape in 0.5.0
+- Tape off by default; the panel exposes drive, tone, wow, flutter, hiss and mix
+- Scale wow/flutter rate and tone with varispeed in a later pass
+- Compensate for the effect's ~10 ms delay in monitoring and overdubs later
+- Per-track tape and monitor-through-tape later
+
+### Master reverb and delay
+
+- Two stereo aux buses with per-deck REV/DLY sends and master returns
+- Reverb: Freeverb-style comb/allpass network with size and damping
+- Delay: 40–1200 ms with feedback and a tone filter
+- Routing: deck mix → sends → reverb/delay returns → cassette tape stage → output
+- Returns default to 0% (off); returns sit before the tape stage
+- FX settings persist and are included in exports, but click/drums bypass them
 
 ## 8. Reuse map
 
@@ -211,8 +246,9 @@ settings and per-track pan/volume/mute metadata.
 | **0.1.0** | Shipped: data-driven tunings, Oud/Laouto/Lute presets, microtonal offsets, compact many-course UI, tests |
 | **0.2.0** | Shipped: Oboe audio engine, shared transport, foreground metronome |
 | **0.3.0** | Shipped: synthesized 8-track drum machine, 16-step sequencer, presets, swing, shared metronome/drum transport |
-| **0.4.0** | Next: full-width 4-track cassette recorder, flip/reverse, pan, playback varispeed 0.5×–2×, master tape emulation |
-| **0.5.0** | Record varispeed, per-track tape, monitor-through-tape, export/share, integration polish |
+| **0.4.0** | Shipped: full-width 4-track cassette recorder, REW/FF, record gain and meters, flip/reverse, pan, playback varispeed 0.5×–2×, cassette-bus tape emulation |
+| **0.7.0** | Shipped: per-deck reverb/delay sends, master FX returns, stereo WAV/OGG export and Android sharing |
+| **Next** | Record varispeed, per-track tape, foreground recording, export presets, library polish |
 
 ## 11. Decisions locked
 
@@ -223,7 +259,9 @@ settings and per-track pan/volume/mute metadata.
 - Drums use yawn's synthesized and sample-based drum work.
 - Cassette: one full-width 4-track program, 15 minutes; flipping plays the same
   tape backwards with physical deck-strip routing. No independent Side B audio.
-- Varispeed: 0.5×–2.0×, playback-only in 0.4.0.
-- Tape: master bus first, off by default, per-track later.
-- Metronome/drums follow varispeed.
-- Four mono recorder tracks with pan.
+- Varispeed: 0.5×–2.0×, playback-only through 0.7.0.
+- Tape: cassette bus first, off by default, master/per-track later.
+- FX: two shared stereo aux buses, per-deck sends, returns before tape.
+- Export: forward 1× WAV or OGG Opus, no MP3 encoder dependency.
+- Metronome/drums follow varispeed and are excluded from exports.
+- Four mono recorder tracks with pan and adjustable input gain.

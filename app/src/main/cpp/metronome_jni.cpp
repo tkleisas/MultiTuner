@@ -173,3 +173,192 @@ Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSampleRate(
 }
 
 } // extern "C"
+
+extern "C" {
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetCassettePlaying(
+    JNIEnv*, jobject, jlong handle, jboolean playing) {
+    if (auto* engine = fromHandle(handle)) {
+        engine->setCassettePlaying(playing == JNI_TRUE);
+    }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeIsCassettePlaying(
+    JNIEnv*, jobject, jlong handle) {
+    auto* engine = fromHandle(handle);
+    return engine != nullptr && engine->isCassettePlaying() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetVarispeed(
+    JNIEnv*, jobject, jlong handle, jfloat varispeed) {
+    if (auto* engine = fromHandle(handle)) engine->setVarispeed(varispeed);
+}
+
+JNIEXPORT jfloat JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeGetVarispeed(
+    JNIEnv*, jobject, jlong handle) {
+    auto* engine = fromHandle(handle);
+    return engine != nullptr ? engine->varispeed() : 1.0f;
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetFlip(
+    JNIEnv*, jobject, jlong handle, jboolean flipped) {
+    if (auto* engine = fromHandle(handle)) engine->setFlip(flipped == JNI_TRUE);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeIsFlipped(
+    JNIEnv*, jobject, jlong handle) {
+    auto* engine = fromHandle(handle);
+    return engine != nullptr && engine->isFlipped() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jlong JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeGetPositionSamples(
+    JNIEnv*, jobject, jlong handle) {
+    auto* engine = fromHandle(handle);
+    return engine != nullptr ? static_cast<jlong>(engine->positionSamples()) : 0;
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetPositionSamples(
+    JNIEnv*, jobject, jlong handle, jlong position) {
+    if (auto* engine = fromHandle(handle)) {
+        engine->setPositionSamples(static_cast<int64_t>(position));
+    }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeLoadCassetteTrack(
+    JNIEnv* env, jobject, jlong handle, jint index, jstring path,
+    jlong startSample) {
+    auto* engine = fromHandle(handle);
+    if (engine == nullptr || path == nullptr) return JNI_FALSE;
+    const char* chars = env->GetStringUTFChars(path, nullptr);
+    if (chars == nullptr) return JNI_FALSE;
+    const bool ok = engine->loadCassetteTrack(
+        index, std::string(chars), static_cast<int64_t>(startSample));
+    env->ReleaseStringUTFChars(path, chars);
+    return ok ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeClearCassetteTracks(
+    JNIEnv*, jobject, jlong handle) {
+    if (auto* engine = fromHandle(handle)) engine->clearCassetteTracks();
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDeckGain(
+    JNIEnv*, jobject, jlong handle, jint deck, jfloat gain) {
+    if (auto* engine = fromHandle(handle)) engine->setDeckGain(deck, gain);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDeckPan(
+    JNIEnv*, jobject, jlong handle, jint deck, jfloat pan) {
+    if (auto* engine = fromHandle(handle)) engine->setDeckPan(deck, pan);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDeckMute(
+    JNIEnv*, jobject, jlong handle, jint deck, jboolean muted) {
+    if (auto* engine = fromHandle(handle)) {
+        engine->setDeckMute(deck, muted == JNI_TRUE);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDeckSolo(
+    JNIEnv*, jobject, jlong handle, jint deck, jboolean soloed) {
+    if (auto* engine = fromHandle(handle)) {
+        engine->setDeckSolo(deck, soloed == JNI_TRUE);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDeckReverbSend(
+    JNIEnv*, jobject, jlong handle, jint deck, jfloat send) {
+    if (auto* engine = fromHandle(handle)) engine->setDeckReverbSend(deck, send);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDeckDelaySend(
+    JNIEnv*, jobject, jlong handle, jint deck, jfloat send) {
+    if (auto* engine = fromHandle(handle)) engine->setDeckDelaySend(deck, send);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetCassetteVolume(
+    JNIEnv*, jobject, jlong handle, jfloat volume) {
+    if (auto* engine = fromHandle(handle)) engine->setCassetteVolume(volume);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetTapeEnabled(
+    JNIEnv*, jobject, jlong handle, jboolean enabled) {
+    if (auto* engine = fromHandle(handle)) {
+        engine->setTapeEnabled(enabled == JNI_TRUE);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetTapeParameter(
+    JNIEnv*, jobject, jlong handle, jint index, jfloat value) {
+    if (auto* engine = fromHandle(handle)) engine->setTapeParameter(index, value);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetReverbReturn(
+    JNIEnv*, jobject, jlong handle, jfloat value) {
+    if (auto* engine = fromHandle(handle)) engine->setReverbReturn(value);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetReverbSize(
+    JNIEnv*, jobject, jlong handle, jfloat value) {
+    if (auto* engine = fromHandle(handle)) engine->setReverbSize(value);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetReverbDamping(
+    JNIEnv*, jobject, jlong handle, jfloat value) {
+    if (auto* engine = fromHandle(handle)) engine->setReverbDamping(value);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDelayReturn(
+    JNIEnv*, jobject, jlong handle, jfloat value) {
+    if (auto* engine = fromHandle(handle)) engine->setDelayReturn(value);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDelayTimeMs(
+    JNIEnv*, jobject, jlong handle, jfloat value) {
+    if (auto* engine = fromHandle(handle)) engine->setDelayTimeMs(value);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDelayFeedback(
+    JNIEnv*, jobject, jlong handle, jfloat value) {
+    if (auto* engine = fromHandle(handle)) engine->setDelayFeedback(value);
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDelayTone(
+    JNIEnv*, jobject, jlong handle, jfloat value) {
+    if (auto* engine = fromHandle(handle)) engine->setDelayTone(value);
+}
+
+JNIEXPORT jfloat JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeCassettePeakLevel(
+    JNIEnv*, jobject, jlong handle) {
+    auto* engine = fromHandle(handle);
+    return engine != nullptr ? engine->cassettePeakLevel() : 0.0f;
+}
+
+} // extern "C"

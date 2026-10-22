@@ -1,13 +1,27 @@
 package com.tkleisas.multituner
 
 import android.app.Application
+import android.net.Uri
+import android.os.Build
 import android.os.SystemClock
+import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.tkleisas.multituner.audio.CassetteNative
+import com.tkleisas.multituner.audio.CassetteRecorder
 import com.tkleisas.multituner.audio.MetronomeAudioEngine
+import com.tkleisas.multituner.audio.OggOpusEncoder
+import com.tkleisas.multituner.model.Cassette
+import com.tkleisas.multituner.model.CassetteAudioTrack
+import com.tkleisas.multituner.model.CassetteDeck
+import com.tkleisas.multituner.model.CassetteExportFormat
+import com.tkleisas.multituner.model.CassetteLibrary
+import com.tkleisas.multituner.model.CassetteMixdown
+import com.tkleisas.multituner.model.CassetteStore
 import com.tkleisas.multituner.model.DrumPattern
 import com.tkleisas.multituner.model.DrumPatterns
 import com.tkleisas.multituner.tuner.TapTempo
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +29,50 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlin.math.max
+import kotlin.math.pow
+import kotlin.math.roundToLong
+
+data class CassetteUiState(
+    val library: CassetteLibrary,
+    val playing: Boolean = false,
+    val recording: Boolean = false,
+    val recordingTrack: Int? = null,
+    val armedTrack: Int? = null,
+    val positionSamples: Long = 0L,
+    val varispeed: Float = 1.0f,
+    val recordLevel: Float = 1.0f,
+    val inputLevel: Float = 0.0f,
+    val outputLevel: Float = 0.0f,
+    val inputClipping: Boolean = false,
+    val flipped: Boolean = false,
+    val tapeEnabled: Boolean = false,
+    val tapeDrive: Float = 0.3f,
+    val tapeTone: Float = 0.8f,
+    val tapeWow: Float = 0.15f,
+    val tapeFlutter: Float = 0.1f,
+    val tapeHiss: Float = 0.05f,
+    val tapeMix: Float = 1.0f,
+    val reverbReturn: Float = 0.0f,
+    val reverbSize: Float = 0.5f,
+    val reverbDamping: Float = 0.35f,
+    val delayReturn: Float = 0.0f,
+    val delayTimeMs: Float = 350.0f,
+    val delayFeedback: Float = 0.35f,
+    val delayTone: Float = 0.7f,
+    val exporting: Boolean = false,
+    val exportProgress: Float = 0.0f,
+    val exportUri: Uri? = null,
+    val exportMime: String? = null,
+    val exportError: String? = null,
+) {
+    val cassette: Cassette get() = library.selected
+}
 
 data class PlaybackUiState(
     val bpm: Int = 120,
@@ -31,6 +89,7 @@ data class PlaybackUiState(
     val drumPresetId: String = DrumPatterns.default.id,
     val swing: Float = 0.0f,
     val drumVolume: Float = 0.8f,
+    val cassette: CassetteUiState,
     val sampleRate: Int = 0,
     val error: String? = null,
 )
@@ -39,7 +98,16 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     private val prefs = application.getSharedPreferences("multituner", 0)
     private val tapTempo = TapTempo()
+    private val cassetteStore = CassetteStore(application)
+    private val recorder = CassetteRecorder(application)
+    private var cassetteLibrary = cassetteStore.load()
     private var engine: MetronomeAudioEngine? = null
+
+    private var recordStartSample = 0L
+    private var recordingFinalFile: File? = null
+    private var recordingTempFile: File? = null
+    private var recordingDeck = -1
+    private var recordingCassetteId: String? = null
 
     private val initialPattern = prefs.getString(KEY_DRUM_PATTERN, null)
         ?.let(DrumPattern::decode)
@@ -60,19 +128,44 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             drumPresetId = initialPresetId,
             swing = prefs.getFloat(KEY_SWING, 0.0f).coerceIn(0.0f, 0.6f),
             drumVolume = prefs.getFloat(KEY_DRUM_VOLUME, 0.8f).coerceIn(0.0f, 1.0f),
+            cassette = CassetteUiState(
+                library = cassetteLibrary,
+                varispeed = prefs.getFloat(KEY_VARISPEED, 1.0f).coerceIn(0.5f, 2.0f),
+                recordLevel = prefs.getFloat(KEY_RECORD_LEVEL, 1.0f).coerceIn(0.0f, 2.0f),
+                flipped = prefs.getBoolean(KEY_FLIP, false),
+                tapeEnabled = prefs.getBoolean(KEY_TAPE_ENABLED, false),
+                tapeDrive = prefs.getFloat(KEY_TAPE_DRIVE, 0.3f).coerceIn(0.0f, 1.0f),
+                tapeTone = prefs.getFloat(KEY_TAPE_TONE, 0.8f).coerceIn(0.0f, 1.0f),
+                tapeWow = prefs.getFloat(KEY_TAPE_WOW, 0.15f).coerceIn(0.0f, 1.0f),
+                tapeFlutter = prefs.getFloat(KEY_TAPE_FLUTTER, 0.1f).coerceIn(0.0f, 1.0f),
+                tapeHiss = prefs.getFloat(KEY_TAPE_HISS, 0.05f).coerceIn(0.0f, 1.0f),
+                tapeMix = prefs.getFloat(KEY_TAPE_MIX, 1.0f).coerceIn(0.0f, 1.0f),
+                reverbReturn = prefs.getFloat(KEY_REVERB_RETURN, 0.0f).coerceIn(0.0f, 1.0f),
+                reverbSize = prefs.getFloat(KEY_REVERB_SIZE, 0.5f).coerceIn(0.0f, 1.0f),
+                reverbDamping = prefs.getFloat(KEY_REVERB_DAMPING, 0.35f)
+                    .coerceIn(0.0f, 1.0f),
+                delayReturn = prefs.getFloat(KEY_DELAY_RETURN, 0.0f).coerceIn(0.0f, 1.0f),
+                delayTimeMs = prefs.getFloat(KEY_DELAY_TIME, 350.0f).coerceIn(40.0f, 1200.0f),
+                delayFeedback = prefs.getFloat(KEY_DELAY_FEEDBACK, 0.35f)
+                    .coerceIn(0.0f, 0.9f),
+                delayTone = prefs.getFloat(KEY_DELAY_TONE, 0.7f).coerceIn(0.0f, 1.0f),
+            ),
         ),
     )
     val uiState: StateFlow<PlaybackUiState> = _uiState.asStateFlow()
 
     init {
+        recorder.setInputGain(_uiState.value.cassette.recordLevel)
         viewModelScope.launch {
             while (isActive) {
                 val state = _uiState.value
                 val audio = engine
-                val anyPlaying = state.metronomePlaying || state.drumsPlaying
+                val anyPlaying = state.metronomePlaying ||
+                    state.drumsPlaying || state.cassette.playing
                 if (anyPlaying && audio != null) {
                     if (!audio.isReady ||
-                        (!audio.isMetronomePlaying() && !audio.isDrumsPlaying())
+                        (!audio.isMetronomePlaying() && !audio.isDrumsPlaying() &&
+                            !audio.isCassettePlaying())
                     ) {
                         audio.close()
                         engine = null
@@ -83,20 +176,51 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                                 currentBeat = 0,
                                 beatPhase = 0.0f,
                                 currentDrumStep = 0,
+                                cassette = it.cassette.copy(
+                                    playing = false,
+                                    recording = false,
+                                    recordingTrack = null,
+                                    positionSamples = 0,
+                                ),
                                 sampleRate = 0,
                                 error = "Audio output stopped",
                             )
                         }
                     } else {
+                        val position = audio.positionSamples()
+                        val sampleRate = if (state.sampleRate > 0) {
+                            state.sampleRate
+                        } else {
+                            audio.sampleRate()
+                        }
+                        val tapeEnd = sampleRate.toLong() * CASSETTE_SECONDS
+                        val cassetteEnded = state.cassette.playing &&
+                            sampleRate > 0 && position >= tapeEnd
+                        if (cassetteEnded) {
+                            audio.setCassettePlaying(false)
+                            if (!state.metronomePlaying && !state.drumsPlaying) {
+                                audio.setPositionSamples(0)
+                            }
+                        }
+                        val resetPosition = cassetteEnded &&
+                            !state.metronomePlaying && !state.drumsPlaying
                         _uiState.update {
                             it.copy(
                                 currentBeat = audio.currentBeat(),
                                 beatPhase = audio.beatPhase(),
                                 currentDrumStep = audio.currentDrumStep(),
+                                cassette = it.cassette.copy(
+                                    playing = if (cassetteEnded) false else it.cassette.playing,
+                                    positionSamples = if (resetPosition) 0 else position,
+                                ),
                             )
                         }
                     }
                 }
+                if (state.cassette.recording && !recorder.isRecording) {
+                    finishRecording()
+                }
+                updateMeters()
                 delay(POLL_INTERVAL_MS)
             }
         }
@@ -167,14 +291,14 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
 
         val audio = ensureEngine() ?: return
-        applySettings(audio, state)
+        applyPerformanceSettings(audio, state)
         audio.setMetronomePlaying(true)
         if (!audio.isMetronomePlaying()) {
             _uiState.update { it.copy(error = "Could not start audio output") }
             return
         }
 
-        val reset = !state.drumsPlaying
+        val reset = !state.drumsPlaying && !state.cassette.playing
         _uiState.update {
             it.copy(
                 metronomePlaying = true,
@@ -196,14 +320,14 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
 
         val audio = ensureEngine() ?: return
-        applySettings(audio, state)
+        applyPerformanceSettings(audio, state)
         audio.setDrumsPlaying(true)
         if (!audio.isDrumsPlaying()) {
             _uiState.update { it.copy(error = "Could not start audio output") }
             return
         }
 
-        val reset = !state.metronomePlaying
+        val reset = !state.metronomePlaying && !state.cassette.playing
         _uiState.update {
             it.copy(
                 drumsPlaying = true,
@@ -242,9 +366,656 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         engine?.setDrumPattern(preset.pattern.toNativeLevels())
     }
 
+    fun selectCassette(id: String) {
+        val state = _uiState.value
+        if (state.cassette.recording) return
+        if (state.cassette.playing) engine?.setCassettePlaying(false)
+        cassetteLibrary = cassetteStore.select(cassetteLibrary, id)
+        val next = state.cassette.copy(
+            library = cassetteLibrary,
+            playing = false,
+            recording = false,
+            recordingTrack = null,
+            armedTrack = null,
+            positionSamples = 0,
+        )
+        _uiState.update { it.copy(cassette = next) }
+        engine?.let {
+            applyCassetteParameters(it, next)
+            loadCassetteTracks(it, cassetteLibrary.selected)
+            applyDeckSettings(it, cassetteLibrary.selected)
+        }
+    }
+
+    fun createCassette() {
+        val state = _uiState.value
+        if (state.cassette.recording) return
+        if (state.cassette.playing) engine?.setCassettePlaying(false)
+        cassetteLibrary = cassetteStore.create(cassetteLibrary)
+        val next = state.cassette.copy(
+            library = cassetteLibrary,
+            playing = false,
+            recording = false,
+            recordingTrack = null,
+            armedTrack = null,
+            positionSamples = 0,
+        )
+        _uiState.update { it.copy(cassette = next) }
+        engine?.let {
+            applyCassetteParameters(it, next)
+            loadCassetteTracks(it, cassetteLibrary.selected)
+            applyDeckSettings(it, cassetteLibrary.selected)
+        }
+    }
+
+    fun deleteCassette(id: String) {
+        val state = _uiState.value
+        if (state.cassette.recording) return
+        if (state.cassette.playing) engine?.setCassettePlaying(false)
+        cassetteLibrary = cassetteStore.delete(cassetteLibrary, id)
+        val next = state.cassette.copy(
+            library = cassetteLibrary,
+            playing = false,
+            recording = false,
+            recordingTrack = null,
+            armedTrack = null,
+            positionSamples = 0,
+        )
+        _uiState.update { it.copy(cassette = next) }
+        engine?.let {
+            applyCassetteParameters(it, next)
+            loadCassetteTracks(it, cassetteLibrary.selected)
+            applyDeckSettings(it, cassetteLibrary.selected)
+        }
+    }
+
+    fun setCassetteColor(color: Long) {
+        val state = _uiState.value
+        val cassette = state.cassette.cassette.copy(color = color)
+        cassetteLibrary = cassetteStore.update(cassetteLibrary, cassette)
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(library = cassetteLibrary))
+        }
+    }
+
+    fun armTrack(index: Int) {
+        val state = _uiState.value
+        if (index !in 0 until Cassette.TRACKS || state.cassette.flipped ||
+            state.cassette.recording
+        ) {
+            return
+        }
+        val newArmed = if (state.cassette.armedTrack == index) null else index
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(armedTrack = newArmed))
+        }
+    }
+
+    fun setDeckGain(index: Int, gain: Float) {
+        updateDeck(index) { it.copy(gain = gain.coerceIn(0.0f, 2.0f)) }
+        engine?.setDeckGain(index, gain)
+    }
+
+    fun setDeckPan(index: Int, pan: Float) {
+        updateDeck(index) { it.copy(pan = pan.coerceIn(-1.0f, 1.0f)) }
+        engine?.setDeckPan(index, pan)
+    }
+
+    fun setDeckReverbSend(index: Int, send: Float) {
+        val clamped = send.coerceIn(0.0f, 1.0f)
+        updateDeck(index) { it.copy(reverbSend = clamped) }
+        engine?.setDeckReverbSend(index, clamped)
+    }
+
+    fun setDeckDelaySend(index: Int, send: Float) {
+        val clamped = send.coerceIn(0.0f, 1.0f)
+        updateDeck(index) { it.copy(delaySend = clamped) }
+        engine?.setDeckDelaySend(index, clamped)
+    }
+
+    fun toggleDeckMute(index: Int) {
+        val deck = _uiState.value.cassette.cassette.decks.getOrNull(index) ?: return
+        updateDeck(index) { it.copy(muted = !deck.muted) }
+        engine?.setDeckMute(index, !deck.muted)
+    }
+
+    fun toggleDeckSolo(index: Int) {
+        val deck = _uiState.value.cassette.cassette.decks.getOrNull(index) ?: return
+        updateDeck(index) { it.copy(soloed = !deck.soloed) }
+        engine?.setDeckSolo(index, !deck.soloed)
+    }
+
+    fun setVarispeed(value: Float) {
+        val state = _uiState.value
+        if (state.cassette.recording) return
+        val clamped = value.coerceIn(0.5f, 2.0f)
+        prefs.edit().putFloat(KEY_VARISPEED, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(varispeed = clamped))
+        }
+        engine?.setVarispeed(clamped)
+    }
+
+    fun toggleFlip() {
+        val state = _uiState.value
+        if (state.cassette.recording) return
+        val flipped = !state.cassette.flipped
+        prefs.edit().putBoolean(KEY_FLIP, flipped).apply()
+        _uiState.update {
+            it.copy(
+                cassette = it.cassette.copy(
+                    flipped = flipped,
+                    armedTrack = if (flipped) null else it.cassette.armedTrack,
+                ),
+            )
+        }
+        engine?.setFlip(flipped)
+    }
+
+    fun setTapeEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_TAPE_ENABLED, enabled).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(tapeEnabled = enabled))
+        }
+        engine?.setTapeEnabled(enabled)
+    }
+
+    fun setTapeDrive(value: Float) {
+        val clamped = value.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_TAPE_DRIVE, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(tapeDrive = clamped))
+        }
+        engine?.setTapeParameter(0, clamped)
+    }
+
+    fun setTapeTone(value: Float) {
+        val clamped = value.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_TAPE_TONE, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(tapeTone = clamped))
+        }
+        engine?.setTapeParameter(4, tapeToneHz(clamped))
+    }
+
+    fun setTapeWow(value: Float) {
+        val clamped = value.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_TAPE_WOW, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(tapeWow = clamped))
+        }
+        engine?.setTapeParameter(1, clamped)
+    }
+
+    fun setTapeFlutter(value: Float) {
+        val clamped = value.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_TAPE_FLUTTER, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(tapeFlutter = clamped))
+        }
+        engine?.setTapeParameter(2, clamped)
+    }
+
+    fun setTapeHiss(value: Float) {
+        val clamped = value.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_TAPE_HISS, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(tapeHiss = clamped))
+        }
+        engine?.setTapeParameter(3, clamped)
+    }
+
+    fun setTapeMix(value: Float) {
+        val clamped = value.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_TAPE_MIX, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(tapeMix = clamped))
+        }
+        engine?.setTapeParameter(5, clamped)
+    }
+
+    fun setReverbReturn(value: Float) {
+        val clamped = value.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_REVERB_RETURN, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(reverbReturn = clamped))
+        }
+        engine?.setReverbReturn(clamped)
+    }
+
+    fun setReverbSize(value: Float) {
+        val clamped = value.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_REVERB_SIZE, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(reverbSize = clamped))
+        }
+        engine?.setReverbSize(clamped)
+    }
+
+    fun setReverbDamping(value: Float) {
+        val clamped = value.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_REVERB_DAMPING, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(reverbDamping = clamped))
+        }
+        engine?.setReverbDamping(clamped)
+    }
+
+    fun setDelayReturn(value: Float) {
+        val clamped = value.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_DELAY_RETURN, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(delayReturn = clamped))
+        }
+        engine?.setDelayReturn(clamped)
+    }
+
+    fun setDelayTimeMs(value: Float) {
+        val clamped = value.coerceIn(40.0f, 1200.0f)
+        prefs.edit().putFloat(KEY_DELAY_TIME, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(delayTimeMs = clamped))
+        }
+        engine?.setDelayTimeMs(clamped)
+    }
+
+    fun setDelayFeedback(value: Float) {
+        val clamped = value.coerceIn(0.0f, 0.9f)
+        prefs.edit().putFloat(KEY_DELAY_FEEDBACK, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(delayFeedback = clamped))
+        }
+        engine?.setDelayFeedback(clamped)
+    }
+
+    fun setDelayTone(value: Float) {
+        val clamped = value.coerceIn(0.0f, 1.0f)
+        prefs.edit().putFloat(KEY_DELAY_TONE, clamped).apply()
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(delayTone = clamped))
+        }
+        engine?.setDelayTone(clamped)
+    }
+
+    fun setRecordLevel(value: Float) {
+        val clamped = value.coerceIn(0.0f, 2.0f)
+        prefs.edit().putFloat(KEY_RECORD_LEVEL, clamped).apply()
+        recorder.setInputGain(clamped)
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(recordLevel = clamped))
+        }
+    }
+
+    fun exportCassette(format: CassetteExportFormat) {
+        val state = _uiState.value
+        if (state.cassette.exporting || state.cassette.recording) return
+        if (format == CassetteExportFormat.OGG &&
+            (Build.VERSION.SDK_INT < Build.VERSION_CODES.R ||
+                !OggOpusEncoder.isAvailable())
+        ) {
+            _uiState.update {
+                it.copy(
+                    cassette = it.cassette.copy(
+                        exportError = "OGG Opus requires Android 11 or newer",
+                    ),
+                )
+            }
+            return
+        }
+
+        val cassette = state.cassette.cassette
+        val totalFrames = CassetteMixdown.totalFrames(cassette)
+        if (totalFrames <= 0L) {
+            _uiState.update {
+                it.copy(
+                    cassette = it.cassette.copy(
+                        exportError = "Record at least one take first",
+                    ),
+                )
+            }
+            return
+        }
+
+        val app = getApplication<Application>()
+        val exportDir = File(app.cacheDir, "exports")
+        val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
+        val baseName = CassetteMixdown.safeName(cassette.name) + "-" + stamp
+        val wavFile = File(exportDir, "$baseName.wav")
+        val oggFile = File(exportDir, "$baseName.ogg")
+        val paths = Array(Cassette.TRACKS) {
+            cassette.audioTracks[it].filePath
+        }
+        val starts = LongArray(Cassette.TRACKS) {
+            cassette.audioTracks[it].startSample
+        }
+        val gains = FloatArray(Cassette.TRACKS) {
+            cassette.decks[it].gain
+        }
+        val pans = FloatArray(Cassette.TRACKS) {
+            cassette.decks[it].pan
+        }
+        val muted = BooleanArray(Cassette.TRACKS) {
+            cassette.decks[it].muted
+        }
+        val soloed = BooleanArray(Cassette.TRACKS) {
+            cassette.decks[it].soloed
+        }
+        val reverbSends = FloatArray(Cassette.TRACKS) {
+            cassette.decks[it].reverbSend
+        }
+        val delaySends = FloatArray(Cassette.TRACKS) {
+            cassette.decks[it].delaySend
+        }
+        val audioState = state.cassette
+
+        _uiState.update {
+            it.copy(
+                cassette = it.cassette.copy(
+                    exporting = true,
+                    exportProgress = 0.05f,
+                    exportUri = null,
+                    exportMime = null,
+                    exportError = null,
+                ),
+            )
+        }
+
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    exportDir.mkdirs()
+                    val cutoff = System.currentTimeMillis() - 6L * 60L * 60L * 1000L
+                    exportDir.listFiles()?.forEach { old ->
+                        if (old.isFile && old.lastModified() < cutoff) old.delete()
+                    }
+
+                    val rendered = CassetteNative.nativeRender(
+                        paths = paths,
+                        startSamples = starts,
+                        gains = gains,
+                        pans = pans,
+                        muted = muted,
+                        soloed = soloed,
+                        reverbSends = reverbSends,
+                        delaySends = delaySends,
+                        totalFrames = totalFrames,
+                        outputPath = wavFile.absolutePath,
+                        reverbReturn = audioState.reverbReturn,
+                        reverbSize = audioState.reverbSize,
+                        reverbDamping = audioState.reverbDamping,
+                        delayReturn = audioState.delayReturn,
+                        delayTimeMs = audioState.delayTimeMs,
+                        delayFeedback = audioState.delayFeedback,
+                        delayTone = audioState.delayTone,
+                        tapeEnabled = audioState.tapeEnabled,
+                        tapeDrive = audioState.tapeDrive,
+                        tapeTone = audioState.tapeTone,
+                        tapeWow = audioState.tapeWow,
+                        tapeFlutter = audioState.tapeFlutter,
+                        tapeHiss = audioState.tapeHiss,
+                        tapeMix = audioState.tapeMix,
+                    )
+                    check(rendered && wavFile.length() > 44L) {
+                        "Could not render the cassette mix"
+                    }
+                    _uiState.update {
+                        it.copy(
+                            cassette = it.cassette.copy(exportProgress = 0.8f),
+                        )
+                    }
+                    if (format == CassetteExportFormat.OGG) {
+                        check(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            "OGG Opus requires Android 11 or newer"
+                        }
+                        val encoded = OggOpusEncoder.encode(wavFile, oggFile)
+                        check(encoded && oggFile.length() > 0L) {
+                            "OGG Opus encoding failed"
+                        }
+                        wavFile.delete()
+                        oggFile
+                    } else {
+                        wavFile
+                    }
+                }.onFailure {
+                    wavFile.delete()
+                    oggFile.delete()
+                }
+            }
+
+            result.fold(
+                onSuccess = { file ->
+                    val uri = FileProvider.getUriForFile(
+                        app,
+                        "${app.packageName}.fileprovider",
+                        file,
+                    )
+                    _uiState.update {
+                        it.copy(
+                            cassette = it.cassette.copy(
+                                exporting = false,
+                                exportProgress = 1.0f,
+                                exportUri = uri,
+                                exportMime = format.mimeType,
+                                exportError = null,
+                            ),
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            cassette = it.cassette.copy(
+                                exporting = false,
+                                exportProgress = 0.0f,
+                                exportError = error.message ?: "Export failed",
+                            ),
+                        )
+                    }
+                },
+            )
+        }
+    }
+
+    fun consumeExport() {
+        _uiState.update {
+            it.copy(
+                cassette = it.cassette.copy(exportUri = null, exportMime = null),
+            )
+        }
+    }
+
+    fun clearExportError() {
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(exportError = null))
+        }
+    }
+
+    fun rewind() = windCassette(-WIND_STEP_SECONDS)
+
+    fun fastForward() = windCassette(WIND_STEP_SECONDS)
+
+    private fun windCassette(seconds: Double) {
+        val state = _uiState.value
+        if (state.cassette.recording) return
+
+        val audio = engine
+        val sampleRate = state.sampleRate.takeIf { it > 0 }
+            ?: audio?.sampleRate()
+            ?: 48000
+        if (sampleRate <= 0) return
+
+        val tapeEnd = sampleRate.toLong() * CASSETTE_SECONDS
+        val varispeed = state.cassette.varispeed.coerceAtLeast(0.5f)
+        val delta = (seconds * sampleRate / varispeed).roundToLong()
+        val base = audio?.positionSamples() ?: state.cassette.positionSamples
+        val next = (base + delta).coerceIn(0L, tapeEnd)
+        audio?.setPositionSamples(next)
+        _uiState.update {
+            it.copy(
+                cassette = it.cassette.copy(positionSamples = next),
+                sampleRate = if (it.sampleRate > 0) it.sampleRate else sampleRate,
+            )
+        }
+    }
+
+    fun toggleCassettePlay() {
+        val state = _uiState.value
+        if (state.cassette.recording) {
+            finishRecording()
+            engine?.setCassettePlaying(false)
+            _uiState.update {
+                it.copy(cassette = it.cassette.copy(playing = false))
+            }
+            return
+        }
+        if (state.cassette.playing) {
+            engine?.setCassettePlaying(false)
+            _uiState.update {
+                it.copy(cassette = it.cassette.copy(playing = false))
+            }
+            return
+        }
+
+        val audio = ensureEngine() ?: return
+        val sampleRate = audio.sampleRate()
+        val tapeEnd = sampleRate.toLong() * CASSETTE_SECONDS
+        val atEnd = tapeEnd > 0 && state.cassette.positionSamples >= tapeEnd
+        val resumePosition = if (atEnd) {
+            0L
+        } else {
+            state.cassette.positionSamples.coerceIn(0L, tapeEnd)
+        }
+        val transportWasPlaying = audio.isPlaying()
+
+        applyPerformanceSettings(audio, state)
+        applyCassetteParameters(audio, state.cassette)
+        audio.setCassettePlaying(true)
+        if (!audio.isCassettePlaying()) {
+            _uiState.update { it.copy(error = "Could not start cassette playback") }
+            return
+        }
+        if (!transportWasPlaying || atEnd) {
+            audio.setPositionSamples(resumePosition)
+        }
+        _uiState.update {
+            it.copy(
+                cassette = it.cassette.copy(
+                    playing = true,
+                    positionSamples = resumePosition,
+                ),
+                sampleRate = sampleRate,
+                error = null,
+            )
+        }
+    }
+
+    fun toggleRecord() {
+        val state = _uiState.value
+        if (state.cassette.recording) {
+            finishRecording()
+            return
+        }
+
+        if (state.cassette.flipped) {
+            _uiState.update {
+                it.copy(error = "Flip the cassette back to record")
+            }
+            return
+        }
+
+        val armed = state.cassette.armedTrack
+        if (armed == null) {
+            _uiState.update {
+                it.copy(error = "Arm a track before recording")
+            }
+            return
+        }
+
+        val audio = ensureEngine() ?: return
+        applyPerformanceSettings(audio, state)
+        applyCassetteParameters(audio, state.cassette)
+
+        val sampleRate = audio.sampleRate()
+        val tapeEnd = sampleRate.toLong() * CASSETTE_SECONDS
+        val atEnd = tapeEnd > 0 && state.cassette.positionSamples >= tapeEnd
+        val resumePosition = if (atEnd) {
+            0L
+        } else {
+            state.cassette.positionSamples.coerceIn(0L, tapeEnd)
+        }
+        val transportWasPlaying = audio.isPlaying()
+        val alreadyPlaying = audio.isCassettePlaying()
+
+        if (state.cassette.varispeed != 1.0f) {
+            prefs.edit().putFloat(KEY_VARISPEED, 1.0f).apply()
+            _uiState.update {
+                it.copy(cassette = it.cassette.copy(varispeed = 1.0f))
+            }
+            audio.setVarispeed(1.0f)
+        }
+
+        val cassette = state.cassette.cassette
+        val finalFile = cassetteStore.trackFile(cassette, armed)
+        val tempFile = File(finalFile.parentFile, finalFile.name + ".rec")
+        recorder.setInputGain(state.cassette.recordLevel)
+
+        if (!recorder.start(tempFile)) {
+            tempFile.delete()
+            _uiState.update {
+                it.copy(error = recorder.error ?: "Could not start recording")
+            }
+            return
+        }
+
+        val startSample: Long
+        if (!alreadyPlaying) {
+            audio.setCassettePlaying(true)
+            if (!audio.isCassettePlaying()) {
+                recorder.stop()
+                tempFile.delete()
+                _uiState.update {
+                    it.copy(error = "Could not start cassette playback")
+                }
+                return
+            }
+            if (!transportWasPlaying || atEnd) {
+                audio.setPositionSamples(resumePosition)
+                startSample = resumePosition
+            } else {
+                startSample = audio.positionSamples()
+            }
+        } else {
+            if (atEnd) audio.setPositionSamples(0L)
+            startSample = if (atEnd) 0L else audio.positionSamples()
+        }
+
+        recordingDeck = armed
+        recordingCassetteId = cassette.id
+        recordingFinalFile = finalFile
+        recordingTempFile = tempFile
+        recordStartSample = startSample
+        audio.setDeckMute(armed, true)
+
+        _uiState.update {
+            it.copy(
+                cassette = it.cassette.copy(
+                    playing = true,
+                    recording = true,
+                    recordingTrack = armed,
+                    positionSamples = startSample,
+                    varispeed = 1.0f,
+                ),
+                sampleRate = audio.sampleRate(),
+                error = null,
+            )
+        }
+    }
+
     fun onAppBackground() {
+        if (_uiState.value.cassette.recording) finishRecording()
         engine?.setMetronomePlaying(false)
         engine?.setDrumsPlaying(false)
+        engine?.setCassettePlaying(false)
         engine?.close()
         engine = null
         _uiState.update {
@@ -254,15 +1025,153 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 currentBeat = 0,
                 beatPhase = 0.0f,
                 currentDrumStep = 0,
+                cassette = it.cassette.copy(
+                    playing = false,
+                    recording = false,
+                    recordingTrack = null,
+                    positionSamples = 0,
+                ),
                 sampleRate = 0,
             )
         }
     }
 
     override fun onCleared() {
+        recorder.stop()
         engine?.close()
         engine = null
         super.onCleared()
+    }
+
+    private fun updateMeters() {
+        val state = _uiState.value.cassette
+        if (!state.recording && !state.playing &&
+            state.inputLevel <= 0.001f && state.outputLevel <= 0.001f &&
+            !state.inputClipping
+        ) {
+            return
+        }
+
+        val inputTarget = if (state.recording) recorder.peakLevel else 0.0f
+        val outputTarget = if (state.playing) {
+            engine?.cassettePeakLevel() ?: 0.0f
+        } else {
+            0.0f
+        }
+        val input = max(inputTarget, state.inputLevel * METER_DECAY)
+            .let { if (it < 0.005f) 0.0f else it.coerceAtMost(2.0f) }
+        val output = max(outputTarget, state.outputLevel * METER_DECAY)
+            .let { if (it < 0.005f) 0.0f else it.coerceAtMost(2.0f) }
+        val clipping = state.recording && recorder.clipping
+
+        if (input != state.inputLevel || output != state.outputLevel ||
+            clipping != state.inputClipping
+        ) {
+            _uiState.update {
+                it.copy(
+                    cassette = it.cassette.copy(
+                        inputLevel = input,
+                        outputLevel = output,
+                        inputClipping = clipping,
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun finishRecording() {
+        if (!_uiState.value.cassette.recording) return
+
+        val cassetteId = recordingCassetteId
+        val deck = recordingDeck
+        val tempFile = recordingTempFile
+        val finalFile = recordingFinalFile
+
+        recorder.stop()
+        val recordingError = recorder.error
+
+        recordingDeck = -1
+        recordingCassetteId = null
+        recordingTempFile = null
+        recordingFinalFile = null
+
+        val state = _uiState.value
+        val currentCassette = state.cassette.library.cassettes
+            .firstOrNull { it.id == cassetteId }
+            ?: state.cassette.cassette
+
+        if (deck >= 0) {
+            val deckState = currentCassette.decks.getOrNull(deck)
+            if (deckState != null) {
+                engine?.setDeckMute(deck, deckState.muted)
+            }
+        }
+
+        if (recordingError != null || deck < 0 || tempFile == null ||
+            finalFile == null || !tempFile.exists() || tempFile.length() <= 44
+        ) {
+            tempFile?.delete()
+            _uiState.update {
+                it.copy(
+                    cassette = it.cassette.copy(
+                        recording = false,
+                        recordingTrack = null,
+                    ),
+                    error = recordingError ?: "Recording failed",
+                )
+            }
+            return
+        }
+
+        if (finalFile.exists()) finalFile.delete()
+        if (!tempFile.renameTo(finalFile)) {
+            tempFile.delete()
+            _uiState.update {
+                it.copy(
+                    cassette = it.cassette.copy(
+                        recording = false,
+                        recordingTrack = null,
+                    ),
+                    error = "Could not save the recording",
+                )
+            }
+            return
+        }
+
+        val updatedCassette = currentCassette.withAudioTrack(
+            deck,
+            CassetteAudioTrack(
+                filePath = finalFile.absolutePath,
+                startSample = recordStartSample,
+            ),
+        )
+        cassetteLibrary = cassetteStore.update(cassetteLibrary, updatedCassette)
+        val loaded = engine?.loadCassetteTrack(
+            deck,
+            finalFile.absolutePath,
+            recordStartSample,
+        ) ?: true
+
+        _uiState.update {
+            it.copy(
+                cassette = it.cassette.copy(
+                    library = cassetteLibrary,
+                    recording = false,
+                    recordingTrack = null,
+                ),
+                error = if (loaded) null else "Recording saved but could not be loaded",
+            )
+        }
+    }
+
+    private fun updateDeck(index: Int, transform: (CassetteDeck) -> CassetteDeck) {
+        val state = _uiState.value
+        val deck = state.cassette.cassette.decks.getOrNull(index) ?: return
+        val cassette = state.cassette.cassette.withDeck(index, transform(deck))
+        cassetteLibrary = cassetteStore.update(cassetteLibrary, cassette)
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(library = cassetteLibrary))
+        }
     }
 
     private fun ensureEngine(): MetronomeAudioEngine? {
@@ -281,12 +1190,16 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
 
         engine = created
-        applySettings(created, _uiState.value)
+        val state = _uiState.value
+        applyPerformanceSettings(created, state)
+        applyCassetteParameters(created, state.cassette)
+        loadCassetteTracks(created, state.cassette.cassette)
+        applyDeckSettings(created, state.cassette.cassette)
         _uiState.update { it.copy(sampleRate = created.sampleRate()) }
         return created
     }
 
-    private fun applySettings(audio: MetronomeAudioEngine, state: PlaybackUiState) {
+    private fun applyPerformanceSettings(audio: MetronomeAudioEngine, state: PlaybackUiState) {
         audio.setBpm(state.bpm.toDouble())
         audio.setBeatsPerBar(state.beatsPerBar)
         audio.setSubdivision(state.subdivision)
@@ -296,6 +1209,51 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         audio.setDrumSwing(state.swing)
         audio.setDrumVolume(state.drumVolume)
     }
+
+    private fun applyCassetteParameters(audio: MetronomeAudioEngine, cassette: CassetteUiState) {
+        audio.setVarispeed(cassette.varispeed)
+        audio.setFlip(cassette.flipped)
+        audio.setTapeEnabled(cassette.tapeEnabled)
+        audio.setTapeParameter(0, cassette.tapeDrive)
+        audio.setTapeParameter(1, cassette.tapeWow)
+        audio.setTapeParameter(2, cassette.tapeFlutter)
+        audio.setTapeParameter(3, cassette.tapeHiss)
+        audio.setTapeParameter(4, tapeToneHz(cassette.tapeTone))
+        audio.setTapeParameter(5, cassette.tapeMix)
+        audio.setTapeParameter(6, 1.0f)
+        audio.setReverbReturn(cassette.reverbReturn)
+        audio.setReverbSize(cassette.reverbSize)
+        audio.setReverbDamping(cassette.reverbDamping)
+        audio.setDelayReturn(cassette.delayReturn)
+        audio.setDelayTimeMs(cassette.delayTimeMs)
+        audio.setDelayFeedback(cassette.delayFeedback)
+        audio.setDelayTone(cassette.delayTone)
+        audio.setCassetteVolume(0.8f)
+    }
+
+    private fun loadCassetteTracks(audio: MetronomeAudioEngine, cassette: Cassette) {
+        audio.clearCassetteTracks()
+        cassette.audioTracks.forEachIndexed { index, track ->
+            val path = track.filePath ?: return@forEachIndexed
+            if (File(path).exists()) {
+                audio.loadCassetteTrack(index, path, track.startSample)
+            }
+        }
+    }
+
+    private fun applyDeckSettings(audio: MetronomeAudioEngine, cassette: Cassette) {
+        cassette.decks.forEachIndexed { index, deck ->
+            audio.setDeckGain(index, deck.gain)
+            audio.setDeckPan(index, deck.pan)
+            audio.setDeckMute(index, deck.muted)
+            audio.setDeckSolo(index, deck.soloed)
+            audio.setDeckReverbSend(index, deck.reverbSend)
+            audio.setDeckDelaySend(index, deck.delaySend)
+        }
+    }
+
+    private fun tapeToneHz(normalized: Float): Float =
+        (200.0 * 100.0.pow(normalized.toDouble())).toFloat()
 
     private companion object {
         const val KEY_BPM = "metronome_bpm"
@@ -307,10 +1265,30 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         const val KEY_DRUM_PRESET = "drum_preset"
         const val KEY_SWING = "drum_swing"
         const val KEY_DRUM_VOLUME = "drum_volume"
+        const val KEY_VARISPEED = "cassette_varispeed"
+        const val KEY_RECORD_LEVEL = "cassette_record_level"
+        const val KEY_FLIP = "cassette_flip"
+        const val KEY_TAPE_ENABLED = "cassette_tape_enabled"
+        const val KEY_TAPE_DRIVE = "cassette_tape_drive"
+        const val KEY_TAPE_TONE = "cassette_tape_tone"
+        const val KEY_TAPE_WOW = "cassette_tape_wow"
+        const val KEY_TAPE_FLUTTER = "cassette_tape_flutter"
+        const val KEY_TAPE_HISS = "cassette_tape_hiss"
+        const val KEY_TAPE_MIX = "cassette_tape_mix"
+        const val KEY_REVERB_RETURN = "cassette_reverb_return"
+        const val KEY_REVERB_SIZE = "cassette_reverb_size"
+        const val KEY_REVERB_DAMPING = "cassette_reverb_damping"
+        const val KEY_DELAY_RETURN = "cassette_delay_return"
+        const val KEY_DELAY_TIME = "cassette_delay_time_ms"
+        const val KEY_DELAY_FEEDBACK = "cassette_delay_feedback"
+        const val KEY_DELAY_TONE = "cassette_delay_tone"
 
         const val MIN_BPM = 30
         const val MAX_BPM = 300
         const val POLL_INTERVAL_MS = 33L
+        const val CASSETTE_SECONDS = 900L
+        const val WIND_STEP_SECONDS = 10.0
+        const val METER_DECAY = 0.86f
 
         val SUPPORTED_BEATS = listOf(2, 3, 4, 6)
         val SUPPORTED_SUBDIVISIONS = listOf(1, 2, 4)

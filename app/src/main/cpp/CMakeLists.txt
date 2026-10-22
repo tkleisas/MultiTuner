@@ -5,10 +5,15 @@ add_library(multituner SHARED
     yin.cpp
     tuner_jni.cpp
     metronome_jni.cpp
+    cassette_jni.cpp
     audio/Transport.cpp
     audio/Metronome.cpp
     audio/DrumSynth.cpp
     audio/DrumMachine.cpp
+    audio/TapeEmulation.cpp
+    audio/Reverb.cpp
+    audio/Delay.cpp
+    audio/CassettePlayer.cpp
     audio/MetronomeEngine.cpp
 )
 

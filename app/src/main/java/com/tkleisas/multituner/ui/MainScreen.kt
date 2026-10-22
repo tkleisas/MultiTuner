@@ -39,6 +39,7 @@ private enum class MainTab(val label: String, val glyph: String) {
     TUNER("Tuner", "♪"),
     METRONOME("Metronome", "◷"),
     DRUMS("Drums", "▦"),
+    CASSETTE("Cassette", "▣"),
 }
 
 @Composable
@@ -95,6 +96,46 @@ fun MainScreen(
                 onSwing = playbackViewModel::setSwing,
                 onDrumVolume = playbackViewModel::setDrumVolume,
                 onToggleMetronome = playbackViewModel::toggleMetronome,
+            )
+
+            MainTab.CASSETTE -> CassetteScreen(
+                state = playbackState,
+                onSelectCassette = playbackViewModel::selectCassette,
+                onCreateCassette = playbackViewModel::createCassette,
+                onDeleteCassette = playbackViewModel::deleteCassette,
+                onColor = playbackViewModel::setCassetteColor,
+                onArmTrack = playbackViewModel::armTrack,
+                onToggleDeckMute = playbackViewModel::toggleDeckMute,
+                onToggleDeckSolo = playbackViewModel::toggleDeckSolo,
+                onDeckGain = playbackViewModel::setDeckGain,
+                onDeckPan = playbackViewModel::setDeckPan,
+                onDeckReverbSend = playbackViewModel::setDeckReverbSend,
+                onDeckDelaySend = playbackViewModel::setDeckDelaySend,
+                onVarispeed = playbackViewModel::setVarispeed,
+                onRecordLevel = playbackViewModel::setRecordLevel,
+                onRewind = playbackViewModel::rewind,
+                onFastForward = playbackViewModel::fastForward,
+                onFlip = playbackViewModel::toggleFlip,
+                onTogglePlay = playbackViewModel::toggleCassettePlay,
+                onToggleRecord = playbackViewModel::toggleRecord,
+                onToggleMetronome = playbackViewModel::toggleMetronome,
+                onTapeEnabled = playbackViewModel::setTapeEnabled,
+                onTapeDrive = playbackViewModel::setTapeDrive,
+                onTapeTone = playbackViewModel::setTapeTone,
+                onTapeWow = playbackViewModel::setTapeWow,
+                onTapeFlutter = playbackViewModel::setTapeFlutter,
+                onTapeHiss = playbackViewModel::setTapeHiss,
+                onTapeMix = playbackViewModel::setTapeMix,
+                onReverbReturn = playbackViewModel::setReverbReturn,
+                onReverbSize = playbackViewModel::setReverbSize,
+                onReverbDamping = playbackViewModel::setReverbDamping,
+                onDelayReturn = playbackViewModel::setDelayReturn,
+                onDelayTime = playbackViewModel::setDelayTimeMs,
+                onDelayFeedback = playbackViewModel::setDelayFeedback,
+                onDelayTone = playbackViewModel::setDelayTone,
+                onExport = playbackViewModel::exportCassette,
+                onExportConsumed = playbackViewModel::consumeExport,
+                onClearExportError = playbackViewModel::clearExportError,
             )
         }
     }

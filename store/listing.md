@@ -8,7 +8,7 @@
 - **App or game:** App
 - **Free or paid:** Free
 - **Category:** Music & Audio
-- **Tags:** Music, Tuner, Metronome, Drums, Guitar, Oud, Lute
+- **Tags:** Music, Tuner, Metronome, Drums, Recorder, Guitar, Oud, Lute
 - **Contact email:** tasos.kleisas@gmail.com
 - **Website:** https://github.com/tkleisas/MultiTuner
 - **Privacy policy:** https://tkleisas.github.io/MultiTuner/privacy-policy.html
@@ -16,13 +16,13 @@
 ## Short description
 
 ```
-Tuner, metronome and drum machine for stringed instruments.
+Tuner, metronome, drums and 4-track cassette recorder for strings.
 ```
 
 ## Full description
 
 ```
-MultiTuner is a fast, offline tuner, metronome and drum machine for stringed instruments. It shows a large note readout, a cents needle, an animated strobe and live feedback for every string or course in the selected tuning.
+MultiTuner is a fast, offline tuner, metronome, drum machine and four-track cassette recorder for stringed instruments. It shows a large note readout, a cents needle, an animated strobe and live feedback for every string or course in the selected tuning.
 
 Built for guitar, Greek bouzouki, saz, tambouras, oud, laouto and Renaissance lute:
 
@@ -51,15 +51,31 @@ DRUMS
 - Swing, drum volume and optional metronome click
 - Drums and click share one transport and can run together
 
+CASSETTE RECORDER
+- Full-width four-track tape with four mono takes and a 15-minute limit
+- Arm and record takes, then overdub while hearing the existing tracks
+- Volume, constant-power pan, mute and solo on every deck strip
+- Rewind and fast-forward by 10 seconds per tap
+- Flip the cassette to play the same tape backwards with physical 1-4 / 2-3 routing
+- Playback varispeed from 0.5x to 2x; click and drums follow the speed
+- Tape emulation with saturation, wow, flutter, hiss, tone and wet/dry mix
+- Reverb and delay master effects with per-deck sends and master returns
+- Adjustable 0-200% record input gain, with live input and tape output meters
+- Export the cassette as a forward 1x stereo mix in WAV or OGG Opus
+- Share exports through the Android share sheet to Files, Drive, email or chat
+- Multiple cassettes with selectable shell colours
+- Recordings stay in private app storage on your device
+
 FEATURES
 - Native C++ YIN pitch detection
 - Automatic string/course detection and manual course lock
 - Large note, cents, confidence, needle and strobe feedback
 - Adjustable A4 reference from 415 to 466 Hz
+- Reverb/delay sends and returns, stereo WAV/OGG export and Android sharing
 - Phone and tablet layouts
 - Works offline
 - No ads, no account and no internet permission
-- Audio is processed on-device and is never recorded or uploaded
+- Tuner audio is processed on-device; cassette takes are stored locally and never uploaded
 
 For best results, play close to the microphone in a quiet room and tune one string at a time.
 
@@ -78,6 +94,8 @@ MultiTuner is suitable for practice, instrument setup and live tuning.
 | Phone screenshot 4 | `store/screenshots/04-drums.png` |
 | Phone screenshot 5 | `store/screenshots/05-lute-10-course.png` |
 | Phone screenshot 6 | `store/screenshots/06-tuning-picker.png` |
+| Phone screenshot 7 | `store/screenshots/08-cassette.png` |
+| Phone screenshot 8 | `store/screenshots/09-cassette-fx.png` |
 | Tablet screenshot | `store/screenshots/07-tablet-layout.png` |
 
 Upload the tablet screenshot to both the 7-inch and 10-inch tablet sections if
@@ -89,7 +107,7 @@ Play Console asks for both.
 - **Ads:** No
 - **In-app purchases:** No
 - **App access:** All functionality is available without a login. The microphone
-  permission is required for tuning.
+  permission is required for tuning and for cassette recording.
 - **Target audience:** 13+ (not designed for children).
 - **News app:** No
 - **COVID-19 contact tracing:** No
@@ -114,12 +132,16 @@ final result in Play Console.
 ### Data safety
 
 - **Does the app collect or share any required user data?** No.
-- **Microphone:** Used for core app functionality only. Audio is processed
-  on-device in real time and is not stored, recorded or transmitted.
+- **Microphone:** Used for tuning and cassette recording. Tuner audio is
+  processed on-device in real time. Cassette takes and exported mixes stay in
+  private app storage and are never uploaded by the app.
+- **User-initiated sharing:** Exporting opens the Android share sheet; a file is
+  transferred only to the app or service the user picks.
 - **Analytics / advertising / tracking SDKs:** None.
 - **Internet permission:** Not requested.
 - **Account creation:** None.
-- **Data deletion:** No accounts or stored user data exist.
+- **Data deletion:** Cassettes can be deleted in the app library. There are no
+  accounts and no server-side data.
 
 ## Reviewer instructions
 
@@ -130,30 +152,29 @@ final result in Play Console.
 5. Adjust the A4 reference with the A4 button and pause/resume with the Audio button.
 6. Open Metronome from the bottom navigation; press START and verify the beat indicator and click playback.
 7. Open Drums; press START and verify the step indicator and drum playback. Tap a step to cycle off → normal → accent.
+8. Open Cassette; arm a deck strip, press REC and verify that the REC IN meter responds. Press SAVE to finish the take.
+9. Press PLAY, then use REW/FF and FLIP to check tape navigation and reverse routing. Try varispeed and the tape-emulation controls.
+10. Raise a deck REV/DLY send and the matching MASTER FX return to verify reverb and delay.
+11. Tap EXPORT, choose WAV or OGG Opus, and verify that the Android share sheet opens with the rendered stereo mix.
 
 No test account or login is required.
 
-## Release notes for v0.3.0
+## Release notes for v0.7.0
 
 ```
-- Added an 8-track synthesized drum machine with a 16-step sequencer
-- Normal and accent steps, Rock/Funk/House/Break patterns, swing and drum volume
-- Drums and metronome run on a shared transport and can play together
-- Metronome with tap tempo, 30–300 BPM, beats per bar, subdivisions, accent and volume
-- Bottom navigation between Tuner, Metronome and Drums
-- Foreground audio that stops when the app is backgrounded
+- Added master reverb and delay with per-deck sends and independent returns
+- Reverb controls: return, size and damping
+- Delay controls: return, time, feedback and tone
+- Added stereo cassette mixdown export in WAV and OGG Opus
+- Exports include deck volume, pan, mute, solo, sends, master FX and tape
+- Export is forward at 1x, ends at the last take, and excludes click and drums
+- Share exports through the Android share sheet to Files, Drive, email or chat
+- Added four-track cassette recorder with flip/reverse, REW/FF, varispeed and tape
+- Added record input gain and live REC IN/TAPE OUT meters
+- Added multiple cassettes, shell colours and local take storage
 - Native YIN pitch detection for guitar, bouzouki, saz, tambouras, oud, laouto and lute
-- Oud, laouto and Renaissance lute presets from 0.1.0
-- Data-driven tuning catalog with microtonal per-string offsets
-- Compact course strip for 8- and 10-course instruments
-- Auto string detection and manual course lock
-- Needle, strobe and per-course visual feedback
-- A4 reference from 415 to 466 Hz
-- Phone and tablet layouts, including navigation rail on wide screens
-- 16 KB page size support for Android 15+ devices
-- Optimized release build with R8 code and resource shrinking
-- Automated JVM and native tests
-- Offline, no ads, no data collection
+- 16 KB page size support, R8 optimization and automated JVM/native tests
+- Offline, no ads and no data collection; recordings stay on the device
 ```
 
 ## Signing notes
@@ -193,7 +214,7 @@ An **organization** account does not have this 12-tester requirement.
 - [ ] Set the privacy policy URL
 - [ ] Complete Ads, App access, Content rating, Target audience and Data safety
 - [ ] Confirm target API 36 is reported for the AAB
-- [ ] Upload `MultiTuner-v0.3.0.aab` to Internal testing first
+- [ ] Upload `MultiTuner-v0.7.0.aab` to Internal testing first
 - [ ] Test the Play-signed build on a physical device
 - [ ] Run the pre-launch report
 - [ ] Complete closed testing if required

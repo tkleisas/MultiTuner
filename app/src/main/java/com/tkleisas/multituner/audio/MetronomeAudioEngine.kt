@@ -65,6 +65,116 @@ internal class MetronomeAudioEngine : AutoCloseable {
         if (handle != 0L) MetronomeNative.nativeSetDrumVolume(handle, volume)
     }
 
+    fun setCassettePlaying(playing: Boolean) {
+        if (handle != 0L) MetronomeNative.nativeSetCassettePlaying(handle, playing)
+    }
+
+    fun isCassettePlaying(): Boolean =
+        handle != 0L && MetronomeNative.nativeIsCassettePlaying(handle)
+
+    fun setVarispeed(varispeed: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetVarispeed(handle, varispeed)
+    }
+
+    fun getVarispeed(): Float =
+        if (handle != 0L) MetronomeNative.nativeGetVarispeed(handle) else 1.0f
+
+    fun setFlip(flipped: Boolean) {
+        if (handle != 0L) MetronomeNative.nativeSetFlip(handle, flipped)
+    }
+
+    fun isFlipped(): Boolean =
+        handle != 0L && MetronomeNative.nativeIsFlipped(handle)
+
+    fun positionSamples(): Long =
+        if (handle != 0L) MetronomeNative.nativeGetPositionSamples(handle) else 0L
+
+    fun setPositionSamples(position: Long) {
+        if (handle != 0L) {
+            MetronomeNative.nativeSetPositionSamples(handle, position.coerceAtLeast(0L))
+        }
+    }
+
+    fun loadCassetteTrack(index: Int, path: String, startSample: Long): Boolean =
+        handle != 0L && MetronomeNative.nativeLoadCassetteTrack(
+            handle, index, path, startSample,
+        )
+
+    fun clearCassetteTracks() {
+        if (handle != 0L) MetronomeNative.nativeClearCassetteTracks(handle)
+    }
+
+    fun setDeckGain(deck: Int, gain: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetDeckGain(handle, deck, gain)
+    }
+
+    fun setDeckPan(deck: Int, pan: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetDeckPan(handle, deck, pan)
+    }
+
+    fun setDeckMute(deck: Int, muted: Boolean) {
+        if (handle != 0L) MetronomeNative.nativeSetDeckMute(handle, deck, muted)
+    }
+
+    fun setDeckSolo(deck: Int, soloed: Boolean) {
+        if (handle != 0L) MetronomeNative.nativeSetDeckSolo(handle, deck, soloed)
+    }
+
+    fun setDeckReverbSend(deck: Int, send: Float) {
+        if (handle != 0L) {
+            MetronomeNative.nativeSetDeckReverbSend(handle, deck, send)
+        }
+    }
+
+    fun setDeckDelaySend(deck: Int, send: Float) {
+        if (handle != 0L) {
+            MetronomeNative.nativeSetDeckDelaySend(handle, deck, send)
+        }
+    }
+
+    fun setCassetteVolume(volume: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetCassetteVolume(handle, volume)
+    }
+
+    fun setTapeEnabled(enabled: Boolean) {
+        if (handle != 0L) MetronomeNative.nativeSetTapeEnabled(handle, enabled)
+    }
+
+    fun setTapeParameter(index: Int, value: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetTapeParameter(handle, index, value)
+    }
+
+    fun setReverbReturn(value: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetReverbReturn(handle, value)
+    }
+
+    fun setReverbSize(value: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetReverbSize(handle, value)
+    }
+
+    fun setReverbDamping(value: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetReverbDamping(handle, value)
+    }
+
+    fun setDelayReturn(value: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetDelayReturn(handle, value)
+    }
+
+    fun setDelayTimeMs(value: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetDelayTimeMs(handle, value)
+    }
+
+    fun setDelayFeedback(value: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetDelayFeedback(handle, value)
+    }
+
+    fun setDelayTone(value: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetDelayTone(handle, value)
+    }
+
+    fun cassettePeakLevel(): Float =
+        if (handle != 0L) MetronomeNative.nativeCassettePeakLevel(handle) else 0.0f
+
     fun currentBeat(): Int =
         if (handle != 0L) MetronomeNative.nativeCurrentBeat(handle) else 0
 

@@ -221,6 +221,10 @@ fun StrobeBand(
 fun LevelMeter(
     level: Double,
     modifier: Modifier = Modifier,
+    label: String = "IN",
+    segments: Int = 16,
+    activeColor: Color = InTuneGreen,
+    clip: Boolean = false,
 ) {
     Row(
         modifier = modifier,
@@ -228,18 +232,25 @@ fun LevelMeter(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "IN",
+            text = label,
             style = MaterialTheme.typography.labelSmall,
             color = MutedText,
         )
-        repeat(16) { index ->
-            val lit = level > (index + 1) / 16.0
+        repeat(segments) { index ->
+            val lit = level > (index + 1).toDouble() / segments
             Box(
                 modifier = Modifier
                     .width(5.dp)
                     .height(if (index % 4 == 0) 12.dp else 8.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(if (lit) InTuneGreen else PanelBorder),
+                    .background(if (lit) activeColor else PanelBorder),
+            )
+        }
+        if (clip) {
+            Text(
+                text = "CLIP",
+                style = MaterialTheme.typography.labelSmall,
+                color = ErrorRed,
             )
         }
     }

@@ -26,3 +26,21 @@ g++ -std=c++17 -O2 \
     "$ROOT/app/src/main/cpp/audio/DrumMachine.cpp" \
     -o "$OUT_DIR/multituner_drum_test"
 "$OUT_DIR/multituner_drum_test"
+
+g++ -std=c++17 -O2 \
+    -I "$ROOT/app/src/main/cpp" \
+    "$ROOT/native-tests/cassette_test.cpp" \
+    "$ROOT/app/src/main/cpp/audio/CassettePlayer.cpp" \
+    "$ROOT/app/src/main/cpp/audio/TapeEmulation.cpp" \
+    "$ROOT/app/src/main/cpp/audio/Reverb.cpp" \
+    "$ROOT/app/src/main/cpp/audio/Delay.cpp" \
+    -o "$OUT_DIR/multituner_cassette_test"
+"$OUT_DIR/multituner_cassette_test"
+
+g++ -std=c++17 -O2 \
+    -I "$ROOT/app/src/main/cpp" \
+    "$ROOT/native-tests/effects_test.cpp" \
+    "$ROOT/app/src/main/cpp/audio/Reverb.cpp" \
+    "$ROOT/app/src/main/cpp/audio/Delay.cpp" \
+    -o "$OUT_DIR/multituner_effects_test"
+"$OUT_DIR/multituner_effects_test"

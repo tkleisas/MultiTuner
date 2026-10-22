@@ -4,14 +4,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/tkleisas/MultiTuner)](https://github.com/tkleisas/MultiTuner/releases)
 
-MultiTuner is a fast, offline Android tuner, metronome and drum machine for
-stringed instruments. It is built around a native C++ YIN pitch detector and a
-shared Oboe audio engine.
+MultiTuner is a fast, offline Android tuner, metronome, drum machine and
+four-track cassette recorder for stringed instruments. It is built around a
+native C++ YIN pitch detector and a shared Oboe audio engine.
 
 The tuner ships with presets for guitar, Greek bouzouki (3- and 4-course), saz,
-tambouras, oud, laouto and Renaissance lute. Metronome and drums share the same
-transport, which will also drive the cassette recorder. It targets Android 10
-and newer and is designed for both phones and tablets.
+tambouras, oud, laouto and Renaissance lute. Metronome, drums and cassette share
+the same transport. The cassette is a full-width four-track, 15-minute tape with
+flip/reverse playback, constant-power pan, 0.5×–2× varispeed and tape
+emulation. It targets Android 10 and newer and is designed for both phones and
+tablets.
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for the product design, cassette recorder
 spec and full roadmap.
@@ -22,6 +24,7 @@ spec and full roadmap.
   <img src="docs/screenshots/main-guitar.png" width="180" alt="Tuner, Standard E" />
   <img src="docs/screenshots/metronome.png" width="180" alt="Metronome" />
   <img src="docs/screenshots/drums.png" width="180" alt="Drum machine" />
+  <img src="docs/screenshots/cassette.png" width="180" alt="Four-track cassette recorder" />
   <img src="docs/screenshots/lute-10-course.png" width="180" alt="10-course Renaissance lute" />
 </p>
 
@@ -31,8 +34,9 @@ spec and full roadmap.
   <img src="docs/screenshots/tablet.png" width="400" alt="Tablet layout with navigation rail" />
 </p>
 
-From left to right: the tuner, metronome, drum machine and 10-course Renaissance
-lute. Bottom: in-tune feedback, the tuning picker and the tablet navigation rail.
+From left to right: the tuner, metronome, drum machine, four-track cassette
+recorder and 10-course Renaissance lute. Bottom: in-tune feedback, the tuning
+picker and the tablet navigation rail.
 
 ## Features
 
@@ -50,8 +54,20 @@ lute. Bottom: in-tune feedback, the tuning picker and the tablet navigation rail
   and volume, with sample-accurate audio.
 - **Drum machine** - 8 synthesized tracks, 16-step sequencer, normal/accent
   steps, Rock/Funk/House/Break presets, swing and drum volume.
-- **Shared transport** - metronome and drums can run together on the same
-  transport; the cassette recorder will join them later.
+- **Four-track cassette recorder** - 15-minute full-width tape, four mono takes,
+  arm/record, constant-power pan, volume, mute/solo, rewind, fast-forward and
+  cassette library with shell colours.
+- **Flip and varispeed** - reverse playback with physical deck-strip routing,
+  tape counter, 0.5×–2× playback varispeed with anti-aliased resampling, and a
+  shared click/drum transport that follows the speed.
+- **Tape character and metering** - saturation, wow, flutter, hiss, tone and
+  wet/dry mix, plus live record-input and cassette-output level meters.
+- **Master reverb and delay** - two stereo send/return effects with per-deck
+  sends, reverb size/damping and delay time/feedback/tone.
+- **Stereo mix export** - render the cassette at 1× with deck settings, sends,
+  FX and tape to WAV or OGG Opus, then share it through the Android share sheet.
+- **Shared transport** - metronome, drums and cassette can run together on the
+  same transport.
 - **Reference pitch** - adjustable A4 reference from 415 Hz to 466 Hz.
 - **Instrument presets** - guitar, bouzouki, saz, tambouras, oud, laouto and Renaissance lute.
 - **Phone and tablet navigation** - bottom navigation on phones and a
@@ -59,8 +75,8 @@ lute. Bottom: in-tune feedback, the tuning picker and the tablet navigation rail
 - **Profile persistence** - the selected tuning, course lock and reference pitch
   are restored on the next launch.
 - **Phone and tablet layouts** - portrait, landscape and wide-screen layouts.
-- **Offline and private** - no internet permission; audio is processed on-device
-  and is never recorded or uploaded.
+- **Offline and private** - no internet permission; tuner audio is processed
+  on-device, and cassette takes stay in private app storage on your device.
 - **Debug test tone** - debug builds include a `TONE` button for testing the
   complete audio path without an instrument. It is not present in release builds.
 - **16 KB page sizes** - the 64-bit native libraries are built with 16 KB
@@ -104,6 +120,32 @@ Presets are data-driven and live in
 
 Detection is monophonic: play one string at a time. Polyphonic "strum all
 strings" detection is not implemented.
+
+## Cassette recorder
+
+The cassette screen emulates a full-width four-track tape deck rather than a
+stereo cassette. A cassette holds four mono takes of up to 15 minutes at 48 kHz,
+16-bit PCM, recorded to app-specific storage.
+
+- Tap a deck strip's **ARM** button, then **REC** to record. Recording starts at
+  the current tape position and runs at 1× even if varispeed is set.
+- **REW** and **FF** wind the tape by 10 seconds per tap. Winding is content-time
+  based and respects varispeed.
+- **PLAY** resumes from the current position. **FLIP** plays the same tape
+  backwards with deck strips routed 1↔4 and 2↔3. Recording while flipped is
+  disabled.
+- The **REC LEVEL** slider sets microphone input gain from 0–200% and applies
+  live while recording. The **REC IN** and **TAPE OUT** meters show post-gain
+  input and cassette playback levels.
+- Each deck strip has volume, constant-power pan, mute, solo, and **REV** /
+  **DLY** sends. The **MASTER FX** panel sets reverb return, size and damping,
+  plus delay return, time, feedback and tone. Effects sit before the tape stage.
+- **EXPORT** renders a forward 1× stereo mix with deck settings, sends, master
+  FX and tape. It ends at the last take, excludes click/drums, and supports WAV
+  or OGG Opus (Android 11+) through the Android share sheet. MP3 encoding is not
+  included because Android has no dependable built-in MP3 encoder.
+- Varispeed, tape and FX settings are saved in the profile; takes live under
+  `Android/data/com.tkleisas.multituner/files/cassettes/<id>/`.
 
 ## Requirements
 
@@ -209,10 +251,14 @@ The JVM tests cover:
 - display smoothing, in-tune hold, confidence/RMS gating and reset behavior
 - tap-tempo averaging, reset and clamping
 - drum pattern cycling, preset integrity and encoding
+- cassette track/deck replacement, library selection fallback and colour palette
+- WAV inspection, export-length calculation, tape clamping and safe file names
 
 The native tests cover YIN accuracy for guitar, bouzouki, saz and low B,
 including harmonic and plucked-style signals, sample-accurate metronome timing,
-and drum synthesis, step timing, swing and pattern playback.
+drum synthesis, step timing, swing and pattern playback, and cassette WAV
+loading, mixer routing, flip/reverse, varispeed, reverb/delay sends, tape
+bypass, level metering and stereo WAV mixdown.
 
 For TDD: write a failing test first, make the smallest change that passes it,
 then run `./scripts/test.sh` before committing.
@@ -452,9 +498,11 @@ tone generator are excluded from release builds.
 
 ## Privacy
 
-MultiTuner does not request the `INTERNET` permission. Microphone audio is
-processed on-device in real time and is not stored, recorded or transmitted.
-The hosted privacy policy is at
+MultiTuner does not request the `INTERNET` permission. Tuner audio is processed
+on-device in real time. Cassette takes are written to private app storage and
+are never uploaded by the app. Exporting creates a local mix; if you share it,
+Android hands the file to the app you choose. You can delete takes from the
+cassette library. The hosted privacy policy is at
 <https://tkleisas.github.io/MultiTuner/privacy-policy.html>.
 
 ## Roadmap
@@ -464,8 +512,9 @@ The full product plan is in [`docs/DESIGN.md`](docs/DESIGN.md). Current status:
 - **0.1.0** — data-driven tunings, oud/laouto/lute presets
 - **0.2.0** — Oboe engine, shared transport, foreground metronome
 - **0.3.0** — drum machine, patterns, swing, shared metronome/drum transport
-- **0.4.0 next** — cassette 4-track recorder
-- Later — custom tuning editor, verified makam presets, polyphonic detection
+- **0.4.0** — cassette 4-track recorder, flip/reverse, varispeed, tape, levels
+- **0.7.0** — master reverb/delay sends and stereo WAV/OGG export with sharing
+- Later — record varispeed, per-track tape, custom tuning editor, makam presets
 
 ## Contributing
 

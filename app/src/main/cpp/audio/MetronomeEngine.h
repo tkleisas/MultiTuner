@@ -4,8 +4,10 @@
 
 #include <atomic>
 #include <cstdint>
+#include <string>
 #include <vector>
 
+#include "audio/CassettePlayer.h"
 #include "audio/DrumMachine.h"
 #include "audio/Metronome.h"
 #include "audio/Transport.h"
@@ -28,9 +30,11 @@ public:
 
     void setMetronomePlaying(bool playing);
     void setDrumsPlaying(bool playing);
+    void setCassettePlaying(bool playing);
 
     bool isMetronomePlaying() const;
     bool isDrumsPlaying() const;
+    bool isCassettePlaying() const;
     bool isPlaying() const;
     bool isReady() const;
 
@@ -38,6 +42,34 @@ public:
     float beatPhase() const;
     int currentDrumStep() const;
     int sampleRate() const;
+    int64_t positionSamples() const;
+    void setPositionSamples(int64_t position);
+
+    void setVarispeed(float varispeed);
+    float varispeed() const;
+    void setFlip(bool flipped);
+    bool isFlipped() const;
+
+    bool loadCassetteTrack(int index, const std::string& path,
+                           int64_t startSample);
+    void clearCassetteTracks();
+    void setDeckGain(int deck, float gain);
+    void setDeckPan(int deck, float pan);
+    void setDeckMute(int deck, bool muted);
+    void setDeckSolo(int deck, bool soloed);
+    void setDeckReverbSend(int deck, float send);
+    void setDeckDelaySend(int deck, float send);
+    void setCassetteVolume(float volume);
+    void setTapeEnabled(bool enabled);
+    void setTapeParameter(int index, float value);
+    void setReverbReturn(float value);
+    void setReverbSize(float value);
+    void setReverbDamping(float value);
+    void setDelayReturn(float value);
+    void setDelayTimeMs(float value);
+    void setDelayFeedback(float value);
+    void setDelayTone(float value);
+    float cassettePeakLevel() const;
 
     void setDrumStep(int track, int step, int level);
     void setDrumPattern(const uint8_t* levels);
@@ -60,16 +92,21 @@ private:
     Transport mTransport;
     Metronome mMetronome;
     DrumMachine mDrums;
+    CassettePlayer mCassette;
 
     std::atomic<bool> mReady{false};
     std::atomic<bool> mResetClick{false};
     std::atomic<bool> mMetronomePlaying{false};
     std::atomic<bool> mDrumsPlaying{false};
+    std::atomic<bool> mCassettePlaying{false};
+    std::atomic<float> mVarispeed{1.0f};
+    std::atomic<bool> mFlip{false};
 
     int32_t mChannels = 2;
     int32_t mSampleRate = 48000;
     std::vector<float> mDrumL;
     std::vector<float> mDrumR;
+    std::vector<float> mCassetteBuffer;
 };
 
 } // namespace multituner::audio

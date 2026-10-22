@@ -39,20 +39,20 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tkleisas.multituner.MetronomeUiState
+import com.tkleisas.multituner.PlaybackUiState
 import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
 fun MetronomeScreen(
-    state: MetronomeUiState,
+    state: PlaybackUiState,
     onBpm: (Int) -> Unit,
     onTapTempo: () -> Unit,
     onBeatsPerBar: (Int) -> Unit,
     onSubdivision: (Int) -> Unit,
     onVolume: (Float) -> Unit,
     onToggleAccent: () -> Unit,
-    onTogglePlaying: () -> Unit,
+    onToggleMetronome: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -105,18 +105,18 @@ fun MetronomeScreen(
         ) {
             Spacer(Modifier.height(8.dp))
             Button(
-                onClick = onTogglePlaying,
+                onClick = onToggleMetronome,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(58.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (state.isPlaying) ErrorRed else InTuneGreen,
-                    contentColor = if (state.isPlaying) Color.White else Color(0xFF06210D),
+                    containerColor = if (state.metronomePlaying) ErrorRed else InTuneGreen,
+                    contentColor = if (state.metronomePlaying) Color.White else Color(0xFF06210D),
                 ),
             ) {
                 Text(
-                    text = if (state.isPlaying) "STOP" else "START",
+                    text = if (state.metronomePlaying) "STOP" else "START",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
@@ -142,7 +142,7 @@ fun MetronomeScreen(
 }
 
 @Composable
-private fun Header(state: MetronomeUiState) {
+private fun Header(state: PlaybackUiState) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
@@ -184,7 +184,7 @@ private fun Header(state: MetronomeUiState) {
                         "idle"
                     },
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (state.isPlaying) InTuneGreen else MutedText,
+                    color = if (state.metronomePlaying || state.drumsPlaying) InTuneGreen else MutedText,
                 )
             }
         }
@@ -193,7 +193,7 @@ private fun Header(state: MetronomeUiState) {
 
 @Composable
 private fun TempoPanel(
-    state: MetronomeUiState,
+    state: PlaybackUiState,
     onBpm: (Int) -> Unit,
     onTapTempo: () -> Unit,
 ) {
@@ -226,7 +226,7 @@ private fun TempoPanel(
                             fontSize = 92.sp,
                             fontFamily = FontFamily.Monospace,
                         ),
-                        color = if (state.isPlaying) InTuneGreen else MaterialTheme.colorScheme.onSurface,
+                        color = if (state.metronomePlaying || state.drumsPlaying) InTuneGreen else MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = "BPM",
@@ -276,11 +276,11 @@ private fun TempoPanel(
 }
 
 @Composable
-private fun BeatPanel(state: MetronomeUiState) {
+private fun BeatPanel(state: PlaybackUiState) {
     val pulse = remember { Animatable(1.0f) }
 
-    LaunchedEffect(state.currentBeat, state.isPlaying) {
-        if (state.isPlaying) {
+    LaunchedEffect(state.currentBeat, state.metronomePlaying) {
+        if (state.metronomePlaying) {
             pulse.snapTo(1.28f)
             pulse.animateTo(1.0f, animationSpec = tween(durationMillis = 160))
         } else {
@@ -299,13 +299,13 @@ private fun BeatPanel(state: MetronomeUiState) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = if (state.isPlaying) {
+                text = if (state.metronomePlaying) {
                     "BEAT ${state.currentBeat + 1} / ${state.beatsPerBar}"
                 } else {
                     "READY"
                 },
                 style = MaterialTheme.typography.labelSmall,
-                color = if (state.isPlaying) InTuneGreen else MutedText,
+                color = if (state.metronomePlaying) InTuneGreen else MutedText,
             )
             Spacer(Modifier.height(12.dp))
             Row(
@@ -313,7 +313,7 @@ private fun BeatPanel(state: MetronomeUiState) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 repeat(state.beatsPerBar) { index ->
-                    val isCurrent = state.isPlaying && index == state.currentBeat
+                    val isCurrent = state.metronomePlaying && index == state.currentBeat
                     val dotSize = if (isCurrent) (17f * pulse.value).dp else 13.dp
                     val dotColor = when {
                         isCurrent -> InTuneGreen
@@ -334,7 +334,7 @@ private fun BeatPanel(state: MetronomeUiState) {
 
 @Composable
 private fun SettingsPanel(
-    state: MetronomeUiState,
+    state: PlaybackUiState,
     onBeatsPerBar: (Int) -> Unit,
     onSubdivision: (Int) -> Unit,
     onVolume: (Float) -> Unit,

@@ -1,5 +1,8 @@
 #include <jni.h>
 
+#include <algorithm>
+#include <vector>
+
 #include "audio/MetronomeEngine.h"
 
 namespace {
@@ -62,10 +65,75 @@ Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetAccentEnabled(
 }
 
 JNIEXPORT void JNICALL
-Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetPlaying(
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetMetronomePlaying(
     JNIEnv*, jobject, jlong handle, jboolean playing) {
     if (auto* engine = fromHandle(handle)) {
-        engine->setPlaying(playing == JNI_TRUE);
+        engine->setMetronomePlaying(playing == JNI_TRUE);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDrumsPlaying(
+    JNIEnv*, jobject, jlong handle, jboolean playing) {
+    if (auto* engine = fromHandle(handle)) {
+        engine->setDrumsPlaying(playing == JNI_TRUE);
+    }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeIsMetronomePlaying(
+    JNIEnv*, jobject, jlong handle) {
+    auto* engine = fromHandle(handle);
+    return engine != nullptr && engine->isMetronomePlaying() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeIsDrumsPlaying(
+    JNIEnv*, jobject, jlong handle) {
+    auto* engine = fromHandle(handle);
+    return engine != nullptr && engine->isDrumsPlaying() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeCurrentDrumStep(
+    JNIEnv*, jobject, jlong handle) {
+    auto* engine = fromHandle(handle);
+    return engine != nullptr ? engine->currentDrumStep() : 0;
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDrumStep(
+    JNIEnv*, jobject, jlong handle, jint track, jint step, jint level) {
+    if (auto* engine = fromHandle(handle)) {
+        engine->setDrumStep(track, step, level);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDrumPattern(
+    JNIEnv* env, jobject, jlong handle, jbyteArray levels) {
+    auto* engine = fromHandle(handle);
+    if (engine == nullptr || levels == nullptr) return;
+    const jsize count = std::min<jsize>(128, env->GetArrayLength(levels));
+    std::vector<uint8_t> data(128, 0);
+    env->GetByteArrayRegion(
+        levels, 0, count, reinterpret_cast<jbyte*>(data.data()));
+    engine->setDrumPattern(data.data());
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDrumSwing(
+    JNIEnv*, jobject, jlong handle, jfloat swing) {
+    if (auto* engine = fromHandle(handle)) {
+        engine->setDrumSwing(swing);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDrumVolume(
+    JNIEnv*, jobject, jlong handle, jfloat volume) {
+    if (auto* engine = fromHandle(handle)) {
+        engine->setDrumVolume(volume);
     }
 }
 

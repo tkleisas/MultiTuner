@@ -8,8 +8,9 @@
 namespace multituner::audio {
 
 namespace {
-constexpr const char* kLogTag = "MultiTunerMetronome";
+constexpr const char* kLogTag = "MultiTunerPlayback";
 constexpr double kRequestedSampleRate = 48000.0;
+constexpr int kMaxDrumBlock = 8192;
 }
 
 MetronomeEngine::~MetronomeEngine() {
@@ -45,12 +46,17 @@ bool MetronomeEngine::open() {
     mMetronome.init(static_cast<double>(mSampleRate), 512);
     mMetronome.setEnabled(true);
     mMetronome.setBeatsPerBar(mTransport.beatsPerBar());
+    mDrums.init(static_cast<double>(mSampleRate), kMaxDrumBlock);
+    mDrumL.assign(static_cast<size_t>(kMaxDrumBlock), 0.0f);
+    mDrumR.assign(static_cast<size_t>(kMaxDrumBlock), 0.0f);
     mReady.store(true, std::memory_order_release);
     return true;
 }
 
 void MetronomeEngine::shutdown() {
     mReady.store(false, std::memory_order_release);
+    mMetronomePlaying.store(false, std::memory_order_release);
+    mDrumsPlaying.store(false, std::memory_order_release);
     mTransport.stop();
     if (mStream) {
         mStream->requestStop();
@@ -80,26 +86,53 @@ void MetronomeEngine::setAccentEnabled(bool enabled) {
     mMetronome.setAccentEnabled(enabled);
 }
 
-void MetronomeEngine::setPlaying(bool playing) {
+void MetronomeEngine::setMetronomePlaying(bool playing) {
     if (!mReady.load(std::memory_order_acquire) || !mStream) return;
-
-    if (playing) {
-        if (mTransport.isPlaying()) return;
-        mTransport.setPositionInSamples(0);
+    const bool wasPlaying = mMetronomePlaying.exchange(
+        playing, std::memory_order_acq_rel);
+    if (playing && !wasPlaying) {
         mResetClick.store(true, std::memory_order_release);
-        mTransport.play();
-        const oboe::Result result = mStream->requestStart();
-        if (result != oboe::Result::OK) {
-            mTransport.stop();
-            mReady.store(false, std::memory_order_release);
-            __android_log_print(ANDROID_LOG_ERROR, kLogTag,
-                                "requestStart failed: %s",
-                                oboe::convertToText(result));
+    }
+    syncTransport();
+}
+
+void MetronomeEngine::setDrumsPlaying(bool playing) {
+    if (!mReady.load(std::memory_order_acquire) || !mStream) return;
+    mDrumsPlaying.store(playing, std::memory_order_release);
+    syncTransport();
+}
+
+void MetronomeEngine::syncTransport() {
+    const bool anyPlaying = mMetronomePlaying.load(std::memory_order_acquire) ||
+                            mDrumsPlaying.load(std::memory_order_acquire);
+
+    if (anyPlaying) {
+        if (!mTransport.isPlaying()) {
+            mTransport.setPositionInSamples(0);
+            mTransport.play();
+            const oboe::Result result = mStream->requestStart();
+            if (result != oboe::Result::OK) {
+                mMetronomePlaying.store(false, std::memory_order_release);
+                mDrumsPlaying.store(false, std::memory_order_release);
+                mTransport.stop();
+                mReady.store(false, std::memory_order_release);
+                __android_log_print(ANDROID_LOG_ERROR, kLogTag,
+                                    "requestStart failed: %s",
+                                    oboe::convertToText(result));
+            }
         }
-    } else {
+    } else if (mTransport.isPlaying()) {
         mTransport.stop();
         mStream->requestStop();
     }
+}
+
+bool MetronomeEngine::isMetronomePlaying() const {
+    return mMetronomePlaying.load(std::memory_order_acquire);
+}
+
+bool MetronomeEngine::isDrumsPlaying() const {
+    return mDrumsPlaying.load(std::memory_order_acquire);
 }
 
 bool MetronomeEngine::isPlaying() const {
@@ -126,8 +159,29 @@ float MetronomeEngine::beatPhase() const {
     return static_cast<float>(fraction);
 }
 
+int MetronomeEngine::currentDrumStep() const {
+    if (!mTransport.isPlaying()) return 0;
+    return mDrums.currentStep(mTransport.bpm(), mTransport.positionInSamples());
+}
+
 int MetronomeEngine::sampleRate() const {
     return mSampleRate;
+}
+
+void MetronomeEngine::setDrumStep(int track, int step, int level) {
+    mDrums.setStep(track, step, level);
+}
+
+void MetronomeEngine::setDrumPattern(const uint8_t* levels) {
+    mDrums.setPattern(levels);
+}
+
+void MetronomeEngine::setDrumSwing(float swing) {
+    mDrums.setSwing(swing);
+}
+
+void MetronomeEngine::setDrumVolume(float volume) {
+    mDrums.setVolume(volume);
 }
 
 oboe::DataCallbackResult MetronomeEngine::onAudioReady(
@@ -142,13 +196,35 @@ oboe::DataCallbackResult MetronomeEngine::onAudioReady(
 
     if (mTransport.isPlaying()) {
         const int64_t position = mTransport.positionInSamples();
-        mMetronome.process(
-            output,
-            numFrames,
-            mChannels,
-            mTransport.bpm(),
-            position,
-            true);
+
+        if (mMetronomePlaying.load(std::memory_order_acquire)) {
+            mMetronome.process(
+                output,
+                numFrames,
+                mChannels,
+                mTransport.bpm(),
+                position,
+                true);
+        }
+
+        if (numFrames <= kMaxDrumBlock) {
+            std::fill(mDrumL.begin(), mDrumL.begin() + numFrames, 0.0f);
+            std::fill(mDrumR.begin(), mDrumR.begin() + numFrames, 0.0f);
+            mDrums.process(
+                mDrumL.data(),
+                mDrumR.data(),
+                numFrames,
+                mTransport.bpm(),
+                position,
+                mDrumsPlaying.load(std::memory_order_acquire));
+            for (int i = 0; i < numFrames; ++i) {
+                output[i * mChannels] += mDrumL[i];
+                if (mChannels > 1) {
+                    output[i * mChannels + 1] += mDrumR[i];
+                }
+            }
+        }
+
         mTransport.advance(numFrames);
     }
 
@@ -158,6 +234,8 @@ oboe::DataCallbackResult MetronomeEngine::onAudioReady(
 void MetronomeEngine::onErrorAfterClose(
     oboe::AudioStream* /*audioStream*/, oboe::Result error) {
     mReady.store(false, std::memory_order_release);
+    mMetronomePlaying.store(false, std::memory_order_release);
+    mDrumsPlaying.store(false, std::memory_order_release);
     mTransport.stop();
     __android_log_print(ANDROID_LOG_ERROR, kLogTag,
                         "audio stream closed with error: %s",

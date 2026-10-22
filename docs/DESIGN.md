@@ -1,6 +1,6 @@
 # MultiTuner — Product Design and Roadmap
 
-Status: living document. v0.2.0 core metronome implemented (foreground audio).
+Status: living document. v0.3.0 drum machine implemented (foreground audio).
 
 ## Vision
 
@@ -83,13 +83,14 @@ labels. Verified makam/maqam presets can be added without code changes.
 
 ## 4. Drums
 
-- Phase 1: rhythm box with 4–8 tracks, 16-step grid, velocity, swing, tempo,
-  preset patterns and built-in kits.
+- Shipped in 0.3.0: 8-track synthesized kit, 16-step grid, normal/accent steps,
+  Rock/Funk/House/Break presets, swing, drum volume and a shared transport with
+  the metronome.
 - Built-in synthesized kit adapted from yawn's `DrumSynth`.
-- Sample kit playback adapted from yawn's `DrumRack` voice.
-- Factory patterns adapted from yawn's GM pattern library.
-- Later: pattern chaining, probability, sample import, per-track effects and
-  MIDI sync.
+- Metronome and drums have independent start/stop states but share one transport
+  and can run together.
+- Sample kit playback adapted from yawn's `DrumRack` voice, pattern chaining,
+  probability, sample import, per-track effects and MIDI sync come later.
 
 ## 5. Cassette 4-track recorder
 
@@ -209,8 +210,8 @@ settings and per-track pan/volume/mute metadata.
 |---|---|
 | **0.1.0** | Shipped: data-driven tunings, Oud/Laouto/Lute presets, microtonal offsets, compact many-course UI, tests |
 | **0.2.0** | Shipped: Oboe audio engine, shared transport, foreground metronome |
-| **0.3.0** | Next: rhythm box and step-sequencer drum machine |
-| **0.4.0** | Full-width 4-track cassette recorder, flip/reverse, pan, playback varispeed 0.5×–2×, master tape emulation |
+| **0.3.0** | Shipped: synthesized 8-track drum machine, 16-step sequencer, presets, swing, shared metronome/drum transport |
+| **0.4.0** | Next: full-width 4-track cassette recorder, flip/reverse, pan, playback varispeed 0.5×–2×, master tape emulation |
 | **0.5.0** | Record varispeed, per-track tape, monitor-through-tape, export/share, integration polish |
 
 ## 11. Decisions locked

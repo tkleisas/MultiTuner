@@ -32,21 +32,22 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.tkleisas.multituner.MetronomeViewModel
+import com.tkleisas.multituner.PlaybackViewModel
 import com.tkleisas.multituner.TunerViewModel
 
 private enum class MainTab(val label: String, val glyph: String) {
     TUNER("Tuner", "♪"),
     METRONOME("Metronome", "◷"),
+    DRUMS("Drums", "▦"),
 }
 
 @Composable
 fun MainScreen(
     tunerViewModel: TunerViewModel,
-    metronomeViewModel: MetronomeViewModel,
+    playbackViewModel: PlaybackViewModel,
 ) {
     val tunerState by tunerViewModel.uiState.collectAsStateWithLifecycle()
-    val metronomeState by metronomeViewModel.uiState.collectAsStateWithLifecycle()
+    val playbackState by playbackViewModel.uiState.collectAsStateWithLifecycle()
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val tab = MainTab.entries[selectedTab]
 
@@ -60,7 +61,7 @@ fun MainScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
-                metronomeViewModel.onAppBackground()
+                playbackViewModel.onAppBackground()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -75,14 +76,25 @@ fun MainScreen(
             )
 
             MainTab.METRONOME -> MetronomeScreen(
-                state = metronomeState,
-                onBpm = metronomeViewModel::setBpm,
-                onTapTempo = metronomeViewModel::tapTempo,
-                onBeatsPerBar = metronomeViewModel::setBeatsPerBar,
-                onSubdivision = metronomeViewModel::setSubdivision,
-                onVolume = metronomeViewModel::setVolume,
-                onToggleAccent = metronomeViewModel::toggleAccent,
-                onTogglePlaying = metronomeViewModel::togglePlaying,
+                state = playbackState,
+                onBpm = playbackViewModel::setBpm,
+                onTapTempo = playbackViewModel::tapTempo,
+                onBeatsPerBar = playbackViewModel::setBeatsPerBar,
+                onSubdivision = playbackViewModel::setSubdivision,
+                onVolume = playbackViewModel::setVolume,
+                onToggleAccent = playbackViewModel::toggleAccent,
+                onToggleMetronome = playbackViewModel::toggleMetronome,
+            )
+
+            MainTab.DRUMS -> DrumScreen(
+                state = playbackState,
+                onBpm = playbackViewModel::setBpm,
+                onToggleDrums = playbackViewModel::toggleDrums,
+                onCycleStep = playbackViewModel::cycleDrumStep,
+                onSelectPreset = playbackViewModel::selectDrumPreset,
+                onSwing = playbackViewModel::setSwing,
+                onDrumVolume = playbackViewModel::setDrumVolume,
+                onToggleMetronome = playbackViewModel::toggleMetronome,
             )
         }
     }

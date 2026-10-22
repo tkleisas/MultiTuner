@@ -4,14 +4,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/tkleisas/MultiTuner)](https://github.com/tkleisas/MultiTuner/releases)
 
-MultiTuner is a fast, offline Android tuner and metronome for stringed
-instruments. It is built around a native C++ YIN pitch detector and a shared
-Oboe audio engine.
+MultiTuner is a fast, offline Android tuner, metronome and drum machine for
+stringed instruments. It is built around a native C++ YIN pitch detector and a
+shared Oboe audio engine.
 
 The tuner ships with presets for guitar, Greek bouzouki (3- and 4-course), saz,
-tambouras, oud, laouto and Renaissance lute. The metronome shares the same
-transport that will drive the drum machine and cassette recorder. It targets
-Android 10 and newer and is designed for both phones and tablets.
+tambouras, oud, laouto and Renaissance lute. Metronome and drums share the same
+transport, which will also drive the cassette recorder. It targets Android 10
+and newer and is designed for both phones and tablets.
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for the product design, cassette recorder
 spec and full roadmap.
@@ -21,17 +21,18 @@ spec and full roadmap.
 <p align="center">
   <img src="docs/screenshots/main-guitar.png" width="180" alt="Tuner, Standard E" />
   <img src="docs/screenshots/metronome.png" width="180" alt="Metronome" />
+  <img src="docs/screenshots/drums.png" width="180" alt="Drum machine" />
   <img src="docs/screenshots/lute-10-course.png" width="180" alt="10-course Renaissance lute" />
-  <img src="docs/screenshots/tuning-picker.png" width="180" alt="Tuning picker" />
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/in-tune.png" width="230" alt="Bouzouki D4 in tune" />
-  <img src="docs/screenshots/tablet.png" width="500" alt="Tablet layout with navigation rail" />
+  <img src="docs/screenshots/in-tune.png" width="200" alt="Bouzouki D4 in tune" />
+  <img src="docs/screenshots/tuning-picker.png" width="200" alt="Tuning picker" />
+  <img src="docs/screenshots/tablet.png" width="400" alt="Tablet layout with navigation rail" />
 </p>
 
-From left to right: the tuner, metronome, 10-course Renaissance lute and the new
-tuning picker. Bottom: in-tune feedback and the tablet navigation rail.
+From left to right: the tuner, metronome, drum machine and 10-course Renaissance
+lute. Bottom: in-tune feedback, the tuning picker and the tablet navigation rail.
 
 ## Features
 
@@ -47,8 +48,10 @@ tuning picker. Bottom: in-tune feedback and the tablet navigation rail.
   needle gauge, animated strobe band, input level meter and an `IN TUNE` state.
 - **Metronome** - 30–300 BPM, tap tempo, beats per bar, subdivisions, accent
   and volume, with sample-accurate audio.
-- **Shared transport** - the metronome uses the audio engine that will drive the
-  drum machine and cassette recorder.
+- **Drum machine** - 8 synthesized tracks, 16-step sequencer, normal/accent
+  steps, Rock/Funk/House/Break presets, swing and drum volume.
+- **Shared transport** - metronome and drums can run together on the same
+  transport; the cassette recorder will join them later.
 - **Reference pitch** - adjustable A4 reference from 415 Hz to 466 Hz.
 - **Instrument presets** - guitar, bouzouki, saz, tambouras, oud, laouto and Renaissance lute.
 - **Phone and tablet navigation** - bottom navigation on phones and a
@@ -205,10 +208,11 @@ The JVM tests cover:
 - string matching, locked courses, octave-pair courses and chromatic fallback
 - display smoothing, in-tune hold, confidence/RMS gating and reset behavior
 - tap-tempo averaging, reset and clamping
+- drum pattern cycling, preset integrity and encoding
 
 The native tests cover YIN accuracy for guitar, bouzouki, saz and low B,
-including harmonic and plucked-style signals, and sample-accurate metronome
-timing, accents, subdivisions and click tails.
+including harmonic and plucked-style signals, sample-accurate metronome timing,
+and drum synthesis, step timing, swing and pattern playback.
 
 For TDD: write a failing test first, make the smallest change that passes it,
 then run `./scripts/test.sh` before committing.
@@ -398,18 +402,18 @@ Store version. Uninstall the sideloaded app before installing from Play.
 │   ├── src/main/java/com/tkleisas/multituner/
 │   │   ├── MainActivity.kt
 │   │   ├── TunerViewModel.kt
-│   │   ├── MetronomeViewModel.kt
-│   │   ├── audio/          # AudioRecord, Oboe metronome, JNI bridges
-│   │   ├── model/          # Tuning model, presets, string matching
+│   │   ├── PlaybackViewModel.kt
+│   │   ├── audio/          # AudioRecord, Oboe playback, JNI bridges
+│   │   ├── model/          # Tunings, string matching, drum patterns
 │   │   ├── tuner/          # Pure display engine and tap tempo
-│   │   └── ui/             # Main navigation, tuner, metronome, gauges
-│   ├── src/main/cpp/       # YIN, transport, metronome, JNI entry points
+│   │   └── ui/             # Navigation, tuner, metronome, drums, gauges
+│   ├── src/main/cpp/       # YIN, transport, metronome, drums, JNI
 │   ├── src/main/resources/ # Data-driven tuning catalog
 │   ├── src/test/           # JVM unit tests
 │   └── build.gradle.kts
 ├── docs/                   # Design/roadmap, landing page, privacy policy, screenshots
 ├── store/                  # Play Store listing copy and graphics
-├── native-tests/           # Host-side DSP and metronome tests
+├── native-tests/           # Host-side DSP, metronome and drum tests
 ├── scripts/                # Release verification (16 KB page sizes)
 ├── .github/workflows/
 └── LICENSE
@@ -459,8 +463,8 @@ The full product plan is in [`docs/DESIGN.md`](docs/DESIGN.md). Current status:
 
 - **0.1.0** — data-driven tunings, oud/laouto/lute presets
 - **0.2.0** — Oboe engine, shared transport, foreground metronome
-- **0.3.0 next** — rhythm box and drum machine
-- **0.4.0** — cassette 4-track recorder
+- **0.3.0** — drum machine, patterns, swing, shared metronome/drum transport
+- **0.4.0 next** — cassette 4-track recorder
 - Later — custom tuning editor, verified makam presets, polyphonic detection
 
 ## Contributing

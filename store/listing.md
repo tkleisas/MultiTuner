@@ -8,7 +8,7 @@
 - **App or game:** App
 - **Free or paid:** Free
 - **Category:** Music & Audio
-- **Tags:** Music, Tuner, Metronome, Guitar, Oud, Lute
+- **Tags:** Music, Tuner, Metronome, Drums, Guitar, Oud, Lute
 - **Contact email:** tasos.kleisas@gmail.com
 - **Website:** https://github.com/tkleisas/MultiTuner
 - **Privacy policy:** https://tkleisas.github.io/MultiTuner/privacy-policy.html
@@ -16,13 +16,13 @@
 ## Short description
 
 ```
-Tuner and metronome for guitar, bouzouki, saz, oud, lute and more.
+Tuner, metronome and drum machine for stringed instruments.
 ```
 
 ## Full description
 
 ```
-MultiTuner is a fast, offline tuner and metronome for stringed instruments. It shows a large note readout, a cents needle, an animated strobe and live feedback for every string or course in the selected tuning.
+MultiTuner is a fast, offline tuner, metronome and drum machine for stringed instruments. It shows a large note readout, a cents needle, an animated strobe and live feedback for every string or course in the selected tuning.
 
 Built for guitar, Greek bouzouki, saz, tambouras, oud, laouto and Renaissance lute:
 
@@ -43,6 +43,13 @@ METRONOME
 - Quarter, eighth and sixteenth subdivisions
 - Accent toggle and volume control
 - Sample-accurate on-device audio with a shared transport
+
+DRUMS
+- 8-track synthesized drum kit
+- 16-step sequencer with normal and accent steps
+- Rock, Funk, House, Break and Empty patterns
+- Swing, drum volume and optional metronome click
+- Drums and click share one transport and can run together
 
 FEATURES
 - Native C++ YIN pitch detection
@@ -68,9 +75,10 @@ MultiTuner is suitable for practice, instrument setup and live tuning.
 | Phone screenshot 1 | `store/screenshots/01-tuner.png` |
 | Phone screenshot 2 | `store/screenshots/02-in-tune.png` |
 | Phone screenshot 3 | `store/screenshots/03-metronome.png` |
-| Phone screenshot 4 | `store/screenshots/04-lute-10-course.png` |
-| Phone screenshot 5 | `store/screenshots/05-tuning-picker.png` |
-| Tablet screenshot | `store/screenshots/06-tablet-layout.png` |
+| Phone screenshot 4 | `store/screenshots/04-drums.png` |
+| Phone screenshot 5 | `store/screenshots/05-lute-10-course.png` |
+| Phone screenshot 6 | `store/screenshots/06-tuning-picker.png` |
+| Tablet screenshot | `store/screenshots/07-tablet-layout.png` |
 
 Upload the tablet screenshot to both the 7-inch and 10-inch tablet sections if
 Play Console asks for both.
@@ -121,16 +129,19 @@ final result in Play Console.
 4. Tap a course chip to lock a string; tap it again to return to auto mode.
 5. Adjust the A4 reference with the A4 button and pause/resume with the Audio button.
 6. Open Metronome from the bottom navigation; press START and verify the beat indicator and click playback.
+7. Open Drums; press START and verify the step indicator and drum playback. Tap a step to cycle off → normal → accent.
 
 No test account or login is required.
 
-## Release notes for v0.2.0
+## Release notes for v0.3.0
 
 ```
-- Added a metronome with tap tempo, 30–300 BPM, beats per bar, subdivisions, accent and volume
-- Added bottom navigation between Tuner and Metronome
-- Shared on-device transport for future recorder and drum modules
-- Metronome audio runs in the foreground and stops when the app is backgrounded
+- Added an 8-track synthesized drum machine with a 16-step sequencer
+- Normal and accent steps, Rock/Funk/House/Break patterns, swing and drum volume
+- Drums and metronome run on a shared transport and can play together
+- Metronome with tap tempo, 30–300 BPM, beats per bar, subdivisions, accent and volume
+- Bottom navigation between Tuner, Metronome and Drums
+- Foreground audio that stops when the app is backgrounded
 - Native YIN pitch detection for guitar, bouzouki, saz, tambouras, oud, laouto and lute
 - Oud, laouto and Renaissance lute presets from 0.1.0
 - Data-driven tuning catalog with microtonal per-string offsets
@@ -182,7 +193,7 @@ An **organization** account does not have this 12-tester requirement.
 - [ ] Set the privacy policy URL
 - [ ] Complete Ads, App access, Content rating, Target audience and Data safety
 - [ ] Confirm target API 36 is reported for the AAB
-- [ ] Upload `MultiTuner-v0.2.0.aab` to Internal testing first
+- [ ] Upload `MultiTuner-v0.3.0.aab` to Internal testing first
 - [ ] Test the Play-signed build on a physical device
 - [ ] Run the pre-launch report
 - [ ] Complete closed testing if required

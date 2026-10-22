@@ -7,6 +7,8 @@ add_library(multituner SHARED
     metronome_jni.cpp
     audio/Transport.cpp
     audio/Metronome.cpp
+    audio/DrumSynth.cpp
+    audio/DrumMachine.cpp
     audio/MetronomeEngine.cpp
 )
 

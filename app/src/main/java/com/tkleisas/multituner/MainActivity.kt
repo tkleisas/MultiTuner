@@ -15,13 +15,13 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val tunerViewModel = ViewModelProvider(this)[TunerViewModel::class.java]
-        val metronomeViewModel = ViewModelProvider(this)[MetronomeViewModel::class.java]
+        val playbackViewModel = ViewModelProvider(this)[PlaybackViewModel::class.java]
 
         setContent {
             MultiTunerTheme {
                 MainScreen(
                     tunerViewModel = tunerViewModel,
-                    metronomeViewModel = metronomeViewModel,
+                    playbackViewModel = playbackViewModel,
                 )
             }
         }

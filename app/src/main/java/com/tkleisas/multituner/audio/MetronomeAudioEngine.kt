@@ -27,12 +27,43 @@ internal class MetronomeAudioEngine : AutoCloseable {
         if (handle != 0L) MetronomeNative.nativeSetAccentEnabled(handle, enabled)
     }
 
-    fun setPlaying(playing: Boolean) {
-        if (handle != 0L) MetronomeNative.nativeSetPlaying(handle, playing)
+    fun setMetronomePlaying(playing: Boolean) {
+        if (handle != 0L) MetronomeNative.nativeSetMetronomePlaying(handle, playing)
+    }
+
+    fun setDrumsPlaying(playing: Boolean) {
+        if (handle != 0L) MetronomeNative.nativeSetDrumsPlaying(handle, playing)
     }
 
     fun isPlaying(): Boolean =
         handle != 0L && MetronomeNative.nativeIsPlaying(handle)
+
+    fun isMetronomePlaying(): Boolean =
+        handle != 0L && MetronomeNative.nativeIsMetronomePlaying(handle)
+
+    fun isDrumsPlaying(): Boolean =
+        handle != 0L && MetronomeNative.nativeIsDrumsPlaying(handle)
+
+    fun currentDrumStep(): Int =
+        if (handle != 0L) MetronomeNative.nativeCurrentDrumStep(handle) else 0
+
+    fun setDrumStep(track: Int, step: Int, level: Int) {
+        if (handle != 0L) {
+            MetronomeNative.nativeSetDrumStep(handle, track, step, level)
+        }
+    }
+
+    fun setDrumPattern(levels: ByteArray) {
+        if (handle != 0L) MetronomeNative.nativeSetDrumPattern(handle, levels)
+    }
+
+    fun setDrumSwing(swing: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetDrumSwing(handle, swing)
+    }
+
+    fun setDrumVolume(volume: Float) {
+        if (handle != 0L) MetronomeNative.nativeSetDrumVolume(handle, volume)
+    }
 
     fun currentBeat(): Int =
         if (handle != 0L) MetronomeNative.nativeCurrentBeat(handle) else 0

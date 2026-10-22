@@ -38,6 +38,17 @@ From left to right: the tuner, metronome, drum machine, four-track cassette
 recorder and 10-course Renaissance lute. Bottom: in-tune feedback, the tuning
 picker and the tablet navigation rail.
 
+Cassette recorder details:
+
+<p align="center">
+  <img src="docs/screenshots/cassette-decks.png" width="200" alt="Deck sends and record/playback meters" />
+  <img src="docs/screenshots/cassette-fx.png" width="200" alt="Master reverb and delay sends and returns" />
+  <img src="docs/screenshots/cassette-export.png" width="200" alt="Export cassette mix as WAV or OGG" />
+</p>
+
+From left to right: per-deck REV/DLY sends with recording and playback meters,
+master reverb/delay returns, and the WAV/OGG export dialog.
+
 ## Features
 
 - **Native pitch detection** - C++ YIN detector running through NDK/JNI, with a

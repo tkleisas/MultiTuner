@@ -66,8 +66,10 @@ master reverb/delay returns, and the WAV/OGG export dialog.
 - **Drum machine** - 8 synthesized tracks, 16-step sequencer, normal/accent
   steps, Rock/Funk/House/Break presets, swing and drum volume.
 - **Four-track cassette recorder** - 15-minute full-width tape, four mono takes,
-  arm/record, constant-power pan, volume, mute/solo, rewind, fast-forward and
+  arm/record, constant-power pan, volume, mute/solo, hold-to-wind transport and
   cassette library with shell colours.
+- **Realistic tape transport** - shell shading, label and side badge, variable
+  tape packs on the reels, hold-to-wind `<<`/`>>`, and `|<`/`>|` start/end jumps.
 - **Flip and varispeed** - reverse playback with physical deck-strip routing,
   tape counter, 0.5×–2× playback varispeed with anti-aliased resampling, and a
   shared click/drum transport that follows the speed.
@@ -140,8 +142,10 @@ stereo cassette. A cassette holds four mono takes of up to 15 minutes at 48 kHz,
 
 - Tap a deck strip's **ARM** button, then **REC** to record. Recording starts at
   the current tape position and runs at 1× even if varispeed is set.
-- **REW** and **FF** wind the tape by 10 seconds per tap. Winding is content-time
-  based and respects varispeed.
+- **<<** and **>>** wind the tape continuously while held, with an immediate
+  first step. Winding is content-time based and respects varispeed.
+- **|<** and **>|** jump to the start or end of the tape. Playback is muted while
+  winding and resumes from the new position on release.
 - **PLAY** resumes from the current position. **FLIP** plays the same tape
   backwards with deck strips routed 1↔4 and 2↔3. Recording while flipped is
   disabled.
@@ -525,6 +529,7 @@ The full product plan is in [`docs/DESIGN.md`](docs/DESIGN.md). Current status:
 - **0.3.0** — drum machine, patterns, swing, shared metronome/drum transport
 - **0.4.0** — cassette 4-track recorder, flip/reverse, varispeed, tape, levels
 - **0.7.0** — master reverb/delay sends and stereo WAV/OGG export with sharing
+- **0.7.1** — realistic cassette shell, variable tape packs, hold-to-wind and tape jump controls
 - Later — record varispeed, per-track tape, custom tuning editor, makam presets
 
 ## Contributing

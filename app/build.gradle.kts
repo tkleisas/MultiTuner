@@ -28,8 +28,8 @@ android {
         applicationId = "com.tkleisas.multituner"
         minSdk = 29
         targetSdk = 36
-        versionCode = 12
-        versionName = "0.7.0"
+        versionCode = 13
+        versionName = "0.7.1"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")

@@ -11,6 +11,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,10 +41,12 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,13 +55,17 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -74,6 +81,7 @@ import kotlin.math.log2
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 @Composable
 fun CassetteScreen(
@@ -91,8 +99,10 @@ fun CassetteScreen(
     onDeckDelaySend: (Int, Float) -> Unit,
     onVarispeed: (Float) -> Unit,
     onRecordLevel: (Float) -> Unit,
-    onRewind: () -> Unit,
-    onFastForward: () -> Unit,
+    onWindStart: (Int) -> Unit,
+    onWindStop: () -> Unit,
+    onToStart: () -> Unit,
+    onToEnd: () -> Unit,
     onFlip: () -> Unit,
     onTogglePlay: () -> Unit,
     onToggleRecord: () -> Unit,
@@ -184,10 +194,12 @@ fun CassetteScreen(
                 Spacer(Modifier.height(14.dp))
                 Transport(
                     state = state,
-                    onRewind = onRewind,
+                    onWindStart = onWindStart,
+                    onWindStop = onWindStop,
+                    onToStart = onToStart,
+                    onToEnd = onToEnd,
                     onPlay = onTogglePlay,
                     onRecord = recordAction,
-                    onFastForward = onFastForward,
                     onFlip = onFlip,
                 )
                 Spacer(Modifier.height(10.dp))
@@ -491,125 +503,287 @@ private fun CassetteShell(
     val direction = if (state.cassette.flipped) -1.0 else 1.0
     val angle = (sourceSeconds * 70.0 * direction) % 360.0
     val shellColor = Color(cassette.color)
+    val tapeFraction = (tapeSeconds / CassettePlayerTapeSeconds).coerceIn(0.0, 1.0)
 
     Surface(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(26.dp),
         color = shellColor,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = cassette.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF0B0F0C),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Canvas(modifier = Modifier.matchParentSize()) {
+                val w = size.width
+                val h = size.height
+                drawRoundRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.16f),
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.10f),
+                        ),
+                    ),
+                    cornerRadius = CornerRadius(26.dp.toPx()),
+                )
+                drawRoundRect(
+                    color = Color.Black.copy(alpha = 0.17f),
+                    topLeft = Offset(7.dp.toPx(), 7.dp.toPx()),
+                    size = Size(
+                        (w - 14.dp.toPx()).coerceAtLeast(1f),
+                        (h - 14.dp.toPx()).coerceAtLeast(1f),
+                    ),
+                    cornerRadius = CornerRadius(20.dp.toPx()),
+                    style = Stroke(1.dp.toPx()),
+                )
+                for (x in listOf(10.dp.toPx(), w - 10.dp.toPx())) {
+                    drawCircle(
+                        color = Color.Black.copy(alpha = 0.20f),
+                        radius = 3.5.dp.toPx(),
+                        center = Offset(x, h * 0.62f),
                     )
-                    Text(
-                        text = if (state.cassette.flipped) {
-                            "SIDE B · REVERSE"
-                        } else {
-                            "SIDE A"
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF0B0F0C).copy(alpha = 0.7f),
-                    )
-                }
-                TextButton(onClick = onOpenExport) {
-                    Text(
-                        text = "EXPORT",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF0B0F0C),
-                    )
-                }
-                TextButton(onClick = onOpenLibrary) {
-                    Text(
-                        text = "LIBRARY",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF0B0F0C),
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.15f),
+                        radius = 2.dp.toPx(),
+                        center = Offset(x - 0.5.dp.toPx(), h * 0.62f - 0.5.dp.toPx()),
+                        style = Stroke(0.7.dp.toPx()),
                     )
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(152.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(0xFF0B0F0C)),
-            ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val w = size.width
-                    val h = size.height
-                    val reelRadius = min(w * 0.12f, h * 0.30f)
-                    val centerY = h * 0.52f
-                    val centers = listOf(w * 0.28f, w * 0.72f)
-
-                    drawLine(
-                        color = InTuneGreen.copy(alpha = 0.12f),
-                        start = Offset(centers[0], centerY),
-                        end = Offset(centers[1], centerY),
-                        strokeWidth = 8.dp.toPx(),
-                    )
-
-                    centers.forEach { centerX ->
-                        drawCircle(
-                            color = PanelBorder,
-                            radius = reelRadius,
-                            center = Offset(centerX, centerY),
-                        )
-                        drawCircle(
-                            color = Color(0xFFE6F2E9),
-                            radius = reelRadius * 0.76f,
-                            center = Offset(centerX, centerY),
-                        )
-                        rotate(
-                            degrees = angle.toFloat(),
-                            pivot = Offset(centerX, centerY),
-                        ) {
-                            repeat(6) { spoke ->
-                                val a = spoke * Math.PI / 3.0
-                                drawLine(
-                                    color = Color(0xFF0B0F0C),
-                                    start = Offset(centerX, centerY),
-                                    end = Offset(
-                                        centerX + cos(a).toFloat() * reelRadius * 0.62f,
-                                        centerY + sin(a).toFloat() * reelRadius * 0.62f,
-                                    ),
-                                    strokeWidth = 2.dp.toPx(),
-                                )
-                            }
-                            drawCircle(
+            Column(modifier = Modifier.padding(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color.White.copy(alpha = 0.10f))
+                            .padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = cassette.name,
+                                style = MaterialTheme.typography.titleMedium,
                                 color = Color(0xFF0B0F0C),
-                                radius = reelRadius * 0.20f,
-                                center = Offset(centerX, centerY),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                text = if (state.cassette.flipped) {
+                                    "SIDE B · REVERSE"
+                                } else {
+                                    "SIDE A"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF0B0F0C).copy(alpha = 0.65f),
                             )
                         }
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF0B0F0C).copy(alpha = 0.18f),
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = if (state.cassette.flipped) "B" else "A",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0B0F0C),
+                                )
+                            }
+                        }
                     }
-
-                    drawRoundRect(
-                        color = InTuneGreen.copy(alpha = 0.35f),
-                        topLeft = Offset(w * 0.42f, h * 0.80f),
-                        size = Size(w * 0.16f, 4.dp.toPx()),
-                        cornerRadius = CornerRadius(2.dp.toPx()),
-                    )
+                    TextButton(onClick = onOpenExport) {
+                        Text(
+                            text = "EXPORT",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF0B0F0C),
+                        )
+                    }
+                    TextButton(onClick = onOpenLibrary) {
+                        Text(
+                            text = "LIBRARY",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF0B0F0C),
+                        )
+                    }
                 }
 
-                Column(
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Spacer(Modifier.height(8.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(158.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFF0B0F0C)),
                 ) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val w = size.width
+                        val h = size.height
+                        val reelRadius = min(w * 0.135f, h * 0.30f)
+                        val centerY = h * 0.43f
+                        val centers = listOf(w * 0.28f, w * 0.72f)
+                        val hubRadius = reelRadius * 0.30f
+                        val fullRadius = reelRadius
+                        val leftAmount = 1.0 - tapeFraction
+                        val rightAmount = tapeFraction
+                        val leftTapeRadius = sqrt(
+                            (hubRadius * hubRadius +
+                                leftAmount.toFloat() *
+                                (fullRadius * fullRadius - hubRadius * hubRadius))
+                                .toDouble(),
+                        ).toFloat()
+                        val rightTapeRadius = sqrt(
+                            (hubRadius * hubRadius +
+                                rightAmount.toFloat() *
+                                (fullRadius * fullRadius - hubRadius * hubRadius))
+                                .toDouble(),
+                        ).toFloat()
+
+                        drawRoundRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFF121A15),
+                                    Color(0xFF060907),
+                                ),
+                            ),
+                            cornerRadius = CornerRadius(16.dp.toPx()),
+                        )
+                        drawRoundRect(
+                            color = Color.White.copy(alpha = 0.05f),
+                            topLeft = Offset(1.dp.toPx(), 1.dp.toPx()),
+                            size = Size(
+                                (w - 2.dp.toPx()).coerceAtLeast(1f),
+                                (h - 2.dp.toPx()).coerceAtLeast(1f),
+                            ),
+                            cornerRadius = CornerRadius(15.dp.toPx()),
+                            style = Stroke(1.dp.toPx()),
+                        )
+
+                        val tapePathY = centerY + reelRadius * 0.93f
+                        drawLine(
+                            color = Color(0xFF342117),
+                            start = Offset(centers[0], tapePathY),
+                            end = Offset(centers[1], tapePathY),
+                            strokeWidth = 2.5.dp.toPx(),
+                        )
+
+                        centers.forEachIndexed { index, centerX ->
+                            val tapeRadius =
+                                if (index == 0) leftTapeRadius else rightTapeRadius
+                            val center = Offset(centerX, centerY)
+                            drawCircle(
+                                color = Color(0xFF2A1A12),
+                                radius = tapeRadius,
+                                center = center,
+                            )
+                            drawCircle(
+                                color = Color(0xFF3A2419),
+                                radius = (tapeRadius * 0.82f).coerceAtLeast(1f),
+                                center = center,
+                            )
+                            drawCircle(
+                                color = Color.White.copy(alpha = 0.035f),
+                                radius = tapeRadius * 0.95f,
+                                center = center,
+                                style = Stroke(1.dp.toPx()),
+                            )
+                            drawCircle(
+                                color = Color(0xFFE6F2E9),
+                                radius = maxOf(hubRadius * 1.38f, 2f),
+                                center = center,
+                            )
+                            drawCircle(
+                                color = Color(0xFFC7D7CC),
+                                radius = hubRadius * 1.02f,
+                                center = center,
+                            )
+                            val reelAngle = angle * (reelRadius / tapeRadius.coerceAtLeast(1f))
+                            rotate(
+                                degrees = reelAngle.toFloat(),
+                                pivot = center,
+                            ) {
+                                repeat(6) { spoke ->
+                                    val a = spoke * Math.PI / 3.0
+                                    drawLine(
+                                        color = Color(0xFF0B0F0C),
+                                        start = center,
+                                        end = Offset(
+                                            centerX + cos(a).toFloat() * hubRadius * 0.92f,
+                                            centerY + sin(a).toFloat() * hubRadius * 0.92f,
+                                        ),
+                                        strokeWidth = 1.8.dp.toPx(),
+                                    )
+                                }
+                                drawCircle(
+                                    color = Color(0xFF0B0F0C),
+                                    radius = hubRadius * 0.20f,
+                                    center = center,
+                                )
+                            }
+                        }
+
+                        val headY = h * 0.79f
+                        drawRoundRect(
+                            color = Color(0xFF202C25),
+                            topLeft = Offset(w * 0.41f, headY),
+                            size = Size(w * 0.18f, h * 0.09f),
+                            cornerRadius = CornerRadius(3.dp.toPx()),
+                        )
+                        drawRoundRect(
+                            color = Color(0xFF3D4B43),
+                            topLeft = Offset(w * 0.46f, headY + 1.dp.toPx()),
+                            size = Size(w * 0.08f, h * 0.055f),
+                            cornerRadius = CornerRadius(2.dp.toPx()),
+                        )
+                        for (x in listOf(w * 0.36f, w * 0.64f)) {
+                            drawCircle(
+                                color = Color(0xFF4A5A50),
+                                radius = 3.2.dp.toPx(),
+                                center = Offset(x, headY + h * 0.045f),
+                            )
+                            drawCircle(
+                                color = Color(0xFF111713),
+                                radius = 1.4.dp.toPx(),
+                                center = Offset(x, headY + h * 0.045f),
+                            )
+                        }
+
+                        drawLine(
+                            color = Color.White.copy(alpha = 0.06f),
+                            start = Offset(w * 0.06f, h * 0.07f),
+                            end = Offset(w * 0.94f, h * 0.07f),
+                            strokeWidth = 1.dp.toPx(),
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF0B0F0C).copy(alpha = 0.28f),
+                    ) {
+                        Text(
+                            text = formatTapeTime(tapeSeconds) + " / 15:00",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color(0xFFE6F2E9),
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
                     Text(
-                        text = formatTapeTime(tapeSeconds) + " / 15:00",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFFE6F2E9),
-                    )
-                    Text(
-                        text = if (state.cassette.recording) "RECORDING" else "TAPE COUNTER",
+                        text = when {
+                            state.cassette.recording -> "RECORDING"
+                            state.cassette.winding -> "WINDING"
+                            else -> "TAPE COUNTER"
+                        },
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (state.cassette.recording) ErrorRed else MutedText,
+                        color = when {
+                            state.cassette.recording -> ErrorRed
+                            state.cassette.winding -> InTuneGreen
+                            else -> Color(0xFF0B0F0C).copy(alpha = 0.62f)
+                        },
                     )
                 }
             }
@@ -657,68 +831,159 @@ private fun ColorPalette(
 @Composable
 private fun Transport(
     state: PlaybackUiState,
-    onRewind: () -> Unit,
+    onWindStart: (Int) -> Unit,
+    onWindStop: () -> Unit,
+    onToStart: () -> Unit,
+    onToEnd: () -> Unit,
     onPlay: () -> Unit,
     onRecord: () -> Unit,
-    onFastForward: () -> Unit,
     onFlip: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        TransportButton(
-            label = "REW",
-            active = false,
-            color = MutedText,
-            onClick = onRewind,
-            enabled = !state.cassette.recording,
-            modifier = Modifier.weight(1f),
-        )
-        TransportButton(
-            label = if (state.cassette.recording) "SAVE" else "REC",
-            active = state.cassette.recording,
-            color = ErrorRed,
-            onClick = onRecord,
-            enabled = !state.cassette.flipped || state.cassette.recording,
-            modifier = Modifier.weight(1f),
-        )
-        TransportButton(
-            label = if (state.cassette.playing) "STOP" else "PLAY",
-            active = state.cassette.playing,
-            color = InTuneGreen,
-            onClick = onPlay,
-            modifier = Modifier.weight(1f),
-        )
-        TransportButton(
-            label = "FF",
-            active = false,
-            color = MutedText,
-            onClick = onFastForward,
-            enabled = !state.cassette.recording,
-            modifier = Modifier.weight(1f),
-        )
-        TransportButton(
-            label = if (state.cassette.flipped) "UNFLIP" else "FLIP",
-            active = state.cassette.flipped,
-            color = WarnYellow,
-            onClick = onFlip,
-            enabled = !state.cassette.recording,
-            modifier = Modifier.weight(1f),
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            TransportButton(
+                label = "|<",
+                active = false,
+                color = MutedText,
+                onClick = onToStart,
+                enabled = !state.cassette.recording,
+                height = 44.dp,
+                modifier = Modifier.weight(1f),
+            )
+            HoldButton(
+                label = "<<",
+                onStart = { onWindStart(-1) },
+                onStop = onWindStop,
+                enabled = !state.cassette.recording,
+                modifier = Modifier.weight(1f),
+            )
+            HoldButton(
+                label = ">>",
+                onStart = { onWindStart(1) },
+                onStop = onWindStop,
+                enabled = !state.cassette.recording,
+                modifier = Modifier.weight(1f),
+            )
+            TransportButton(
+                label = ">|",
+                active = false,
+                color = MutedText,
+                onClick = onToEnd,
+                enabled = !state.cassette.recording,
+                height = 44.dp,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Spacer(Modifier.height(6.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            TransportButton(
+                label = if (state.cassette.recording) "SAVE" else "REC",
+                active = state.cassette.recording,
+                color = ErrorRed,
+                onClick = onRecord,
+                enabled = !state.cassette.flipped || state.cassette.recording,
+                modifier = Modifier.weight(1f),
+            )
+            TransportButton(
+                label = if (state.cassette.playing) "STOP" else "PLAY",
+                active = state.cassette.playing,
+                color = InTuneGreen,
+                onClick = onPlay,
+                modifier = Modifier.weight(1f),
+            )
+            TransportButton(
+                label = if (state.cassette.flipped) "UNFLIP" else "FLIP",
+                active = state.cassette.flipped,
+                color = WarnYellow,
+                onClick = onFlip,
+                enabled = !state.cassette.recording,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = when {
+                state.cassette.flipped ->
+                    "Side B is reverse playback. Flip back to record."
+                state.cassette.winding -> "Winding tape…"
+                else ->
+                    "Hold << / >> to wind; |< / >| jump to tape start/end."
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = when {
+                state.cassette.flipped -> WarnYellow.copy(alpha = 0.8f)
+                state.cassette.winding -> InTuneGreen
+                else -> MutedText
+            },
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
         )
     }
-    Spacer(Modifier.height(4.dp))
-    Text(
-        text = if (state.cassette.flipped) {
-            "Side B is reverse playback. Flip back to record."
+}
+
+@Composable
+private fun HoldButton(
+    label: String,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val currentStart by rememberUpdatedState(onStart)
+    val currentStop by rememberUpdatedState(onStop)
+
+    DisposableEffect(Unit) {
+        onDispose { currentStop() }
+    }
+
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = if (pressed) {
+            InTuneGreen.copy(alpha = 0.20f)
         } else {
-            "REW / FF wind the tape 10 seconds per tap."
+            PanelColor
         },
-        style = MaterialTheme.typography.labelSmall,
-        color = if (state.cassette.flipped) WarnYellow.copy(alpha = 0.8f) else MutedText,
-        modifier = Modifier.fillMaxWidth(),
-        textAlign = TextAlign.Center,
-    )
+        border = BorderStroke(1.dp, if (pressed) InTuneGreen else PanelBorder),
+        modifier = modifier
+            .focusProperties { canFocus = false }
+            .height(44.dp)
+            .pointerInput(enabled) {
+                if (!enabled) return@pointerInput
+                detectTapGestures(
+                    onPress = {
+                        pressed = true
+                        currentStart()
+                        tryAwaitRelease()
+                        pressed = false
+                        currentStop()
+                    },
+                )
+            },
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                color = if (enabled) {
+                    if (pressed) InTuneGreen else MaterialTheme.colorScheme.onSurface
+                } else {
+                    MutedText.copy(alpha = 0.5f)
+                },
+            )
+        }
+    }
 }
 
 @Composable
@@ -728,6 +993,7 @@ private fun TransportButton(
     color: Color,
     onClick: () -> Unit,
     enabled: Boolean = true,
+    height: Dp = 54.dp,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -738,7 +1004,7 @@ private fun TransportButton(
         border = BorderStroke(1.dp, if (active) color else PanelBorder),
         modifier = modifier
             .focusProperties { canFocus = false }
-            .height(54.dp),
+            .height(height),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(

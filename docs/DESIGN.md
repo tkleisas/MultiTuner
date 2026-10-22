@@ -1,6 +1,6 @@
 # MultiTuner — Product Design and Roadmap
 
-Status: living document. v0.7.0 cassette recorder, master FX and export implemented.
+Status: living document. v0.7.1 cassette transport and shell refined.
 
 ## Vision
 
@@ -125,23 +125,26 @@ When flipped:
 
 ### Cassette UI
 
-Shipped in 0.4.0 and 0.7.0:
+Shipped through 0.7.1:
 
 - Cassette library with create, select and delete; rename/duplicate are planned
 - User-selectable cassette shell colors
-- Animated reels; both reels rotate in the transport direction and follow
-  varispeed
+- Shell shading, label plate, side badge, screws, tape window, head and capstans
+- Variable tape packs on the reels; both reels rotate in the transport direction
+  and follow varispeed
 - Tape counter, side/reverse indicator and total length
 - Four track strips: arm, volume, constant-power pan, mute, solo and per-deck
   reverb/delay sends
-- REW/FF buttons that wind 10 seconds of tape content per tap
+- Hold `<<`/`>>` to wind continuously (with an immediate first step); playback is
+  muted while winding
+- `|<` and `>|` jump to tape start/end
 - Record input gain (0–200%) plus REC IN and TAPE OUT level meters
 - Varispeed control and cassette-bus tape-emulation panel on the deck
 - Master reverb and delay returns with size/damping and time/feedback/tone
 - Export button for WAV/OGG stereo mixdowns and Android share-sheet handoff
 
-Planned polish: variable reel radii, a flip animation, per-strip meters and
-waveforms, and a larger deck-style transport.
+Planned polish: a flip animation, per-strip meters and waveforms, and a larger
+deck-style transport.
 
 ### Session layout
 
@@ -189,8 +192,8 @@ Planned:
 - Display ratio and semitones; ratio changes currently apply immediately
 - Metronome and drums follow varispeed; effective BPM display is planned
 - Windowed-sinc resampling with anti-aliasing for read rates above 1×
-- REW/FF strokes are content-time based, so each tap moves 10 seconds of tape
-  regardless of varispeed
+- Hold-wind steps are content-time based and respect varispeed; start/end jumps
+  set the transport directly
 - Record-varispeed with takes resampled into the session timeline is planned
 
 ## 7. Tape emulation
@@ -248,6 +251,7 @@ Planned:
 | **0.3.0** | Shipped: synthesized 8-track drum machine, 16-step sequencer, presets, swing, shared metronome/drum transport |
 | **0.4.0** | Shipped: full-width 4-track cassette recorder, REW/FF, record gain and meters, flip/reverse, pan, playback varispeed 0.5×–2×, cassette-bus tape emulation |
 | **0.7.0** | Shipped: per-deck reverb/delay sends, master FX returns, stereo WAV/OGG export and Android sharing |
+| **0.7.1** | Shipped: realistic cassette shell, variable tape packs, hold-to-wind and tape start/end controls |
 | **Next** | Record varispeed, per-track tape, foreground recording, export presets, library polish |
 
 ## 11. Decisions locked
@@ -259,7 +263,7 @@ Planned:
 - Drums use yawn's synthesized and sample-based drum work.
 - Cassette: one full-width 4-track program, 15 minutes; flipping plays the same
   tape backwards with physical deck-strip routing. No independent Side B audio.
-- Varispeed: 0.5×–2.0×, playback-only through 0.7.0.
+- Varispeed: 0.5×–2.0×, playback-only through 0.7.1.
 - Tape: cassette bus first, off by default, master/per-track later.
 - FX: two shared stereo aux buses, per-deck sends, returns before tape.
 - Export: forward 1× WAV or OGG Opus, no MP3 encoder dependency.

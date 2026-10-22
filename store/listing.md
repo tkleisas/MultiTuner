@@ -55,9 +55,10 @@ CASSETTE RECORDER
 - Full-width four-track tape with four mono takes and a 15-minute limit
 - Arm and record takes, then overdub while hearing the existing tracks
 - Volume, constant-power pan, mute and solo on every deck strip
-- Rewind and fast-forward by 10 seconds per tap
+- Hold rewind/fast-forward (<< / >>) or jump to tape start/end (|< / >|)
 - Flip the cassette to play the same tape backwards with physical 1-4 / 2-3 routing
 - Playback varispeed from 0.5x to 2x; click and drums follow the speed
+- Realistic cassette shell with label, side badge, variable reel tape packs and hardware details
 - Tape emulation with saturation, wow, flutter, hiss, tone and wet/dry mix
 - Reverb and delay master effects with per-deck sends and master returns
 - Adjustable 0-200% record input gain, with live input and tape output meters
@@ -159,19 +160,22 @@ final result in Play Console.
 
 No test account or login is required.
 
-## Release notes for v0.7.0
+## Release notes for v0.7.1
 
 ```
-- Added master reverb and delay with per-deck sends and independent returns
-- Reverb controls: return, size and damping
-- Delay controls: return, time, feedback and tone
-- Added stereo cassette mixdown export in WAV and OGG Opus
+- More realistic cassette shell with label plate, side badge, tape window and hardware
+- Variable reel tape packs with both reels turning in the transport direction
+- Hold << or >> to wind the tape; playback is muted while winding
+- Tap |< or >| to jump to the start or end of the tape
+- Refined transport layout with a separate REC/PLAY/FLIP row
+- Master reverb and delay with per-deck sends and independent returns
+- Stereo cassette mixdown export in WAV and OGG Opus
 - Exports include deck volume, pan, mute, solo, sends, master FX and tape
 - Export is forward at 1x, ends at the last take, and excludes click and drums
 - Share exports through the Android share sheet to Files, Drive, email or chat
-- Added four-track cassette recorder with flip/reverse, REW/FF, varispeed and tape
-- Added record input gain and live REC IN/TAPE OUT meters
-- Added multiple cassettes, shell colours and local take storage
+- Four-track cassette recorder with flip/reverse, varispeed and tape character
+- Record input gain and live REC IN/TAPE OUT meters
+- Multiple cassettes, shell colours and local take storage
 - Native YIN pitch detection for guitar, bouzouki, saz, tambouras, oud, laouto and lute
 - 16 KB page size support, R8 optimization and automated JVM/native tests
 - Offline, no ads and no data collection; recordings stay on the device
@@ -214,7 +218,7 @@ An **organization** account does not have this 12-tester requirement.
 - [ ] Set the privacy policy URL
 - [ ] Complete Ads, App access, Content rating, Target audience and Data safety
 - [ ] Confirm target API 36 is reported for the AAB
-- [ ] Upload `MultiTuner-v0.7.0.aab` to Internal testing first
+- [ ] Upload `MultiTuner-v0.7.1.aab` to Internal testing first
 - [ ] Test the Play-signed build on a physical device
 - [ ] Run the pre-launch report
 - [ ] Complete closed testing if required

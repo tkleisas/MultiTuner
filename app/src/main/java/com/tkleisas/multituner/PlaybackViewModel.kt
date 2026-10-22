@@ -22,6 +22,7 @@ import com.tkleisas.multituner.model.DrumPattern
 import com.tkleisas.multituner.model.DrumPatterns
 import com.tkleisas.multituner.tuner.TapTempo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +43,7 @@ data class CassetteUiState(
     val library: CassetteLibrary,
     val playing: Boolean = false,
     val recording: Boolean = false,
+    val winding: Boolean = false,
     val recordingTrack: Int? = null,
     val armedTrack: Int? = null,
     val positionSamples: Long = 0L,
@@ -102,6 +104,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private val recorder = CassetteRecorder(application)
     private var cassetteLibrary = cassetteStore.load()
     private var engine: MetronomeAudioEngine? = null
+    private var windJob: Job? = null
 
     private var recordStartSample = 0L
     private var recordingFinalFile: File? = null
@@ -830,9 +833,72 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun rewind() = windCassette(-WIND_STEP_SECONDS)
+    fun beginWind(direction: Int) {
+        if (direction == 0) return
+        val state = _uiState.value
+        if (state.cassette.recording || windJob != null) return
 
-    fun fastForward() = windCassette(WIND_STEP_SECONDS)
+        engine?.setCassetteVolume(0f)
+        _uiState.update {
+            it.copy(
+                cassette = it.cassette.copy(
+                    winding = true,
+                    outputLevel = 0f,
+                ),
+            )
+        }
+        windCassette(direction * WIND_HOLD_STEP_SECONDS)
+        windJob = viewModelScope.launch {
+            while (isActive) {
+                delay(WIND_HOLD_INTERVAL_MS)
+                windCassette(direction * WIND_HOLD_STEP_SECONDS)
+            }
+        }
+    }
+
+    fun endWind() {
+        windJob?.cancel()
+        windJob = null
+        engine?.setCassetteVolume(0.8f)
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(winding = false))
+        }
+    }
+
+    fun windToStart() {
+        if (_uiState.value.cassette.recording) return
+        seekCassetteTo(0L)
+    }
+
+    fun windToEnd() {
+        val state = _uiState.value
+        if (state.cassette.recording) return
+        val sampleRate = state.sampleRate.takeIf { it > 0 }
+            ?: engine?.sampleRate()
+            ?: 48000
+        seekCassetteTo(sampleRate.toLong() * CASSETTE_SECONDS)
+    }
+
+    private fun seekCassetteTo(position: Long) {
+        val state = _uiState.value
+        if (state.cassette.recording) return
+
+        val audio = engine
+        val sampleRate = state.sampleRate.takeIf { it > 0 }
+            ?: audio?.sampleRate()
+            ?: 48000
+        val next = position.coerceIn(
+            0L,
+            sampleRate.toLong() * CASSETTE_SECONDS,
+        )
+        audio?.setPositionSamples(next)
+        _uiState.update {
+            it.copy(
+                cassette = it.cassette.copy(positionSamples = next),
+                sampleRate = if (it.sampleRate > 0) it.sampleRate else sampleRate,
+            )
+        }
+    }
 
     private fun windCassette(seconds: Double) {
         val state = _uiState.value
@@ -849,6 +915,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         val delta = (seconds * sampleRate / varispeed).roundToLong()
         val base = audio?.positionSamples() ?: state.cassette.positionSamples
         val next = (base + delta).coerceIn(0L, tapeEnd)
+        if (next == base) return
         audio?.setPositionSamples(next)
         _uiState.update {
             it.copy(
@@ -1013,6 +1080,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun onAppBackground() {
         if (_uiState.value.cassette.recording) finishRecording()
+        endWind()
         engine?.setMetronomePlaying(false)
         engine?.setDrumsPlaying(false)
         engine?.setCassettePlaying(false)
@@ -1028,6 +1096,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 cassette = it.cassette.copy(
                     playing = false,
                     recording = false,
+                    winding = false,
                     recordingTrack = null,
                     positionSamples = 0,
                 ),
@@ -1037,6 +1106,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
 
     override fun onCleared() {
+        windJob?.cancel()
         recorder.stop()
         engine?.close()
         engine = null
@@ -1287,7 +1357,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         const val MAX_BPM = 300
         const val POLL_INTERVAL_MS = 33L
         const val CASSETTE_SECONDS = 900L
-        const val WIND_STEP_SECONDS = 10.0
+        const val WIND_HOLD_STEP_SECONDS = 1.0
+        const val WIND_HOLD_INTERVAL_MS = 50L
         const val METER_DECAY = 0.86f
 
         val SUPPORTED_BEATS = listOf(2, 3, 4, 6)

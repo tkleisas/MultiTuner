@@ -1,6 +1,6 @@
 # MultiTuner — Product Design and Roadmap
 
-Status: living document. v0.8.0 multi-source cassette recording and side flip.
+Status: living document. v0.8.1 Side B recording and cassette polish.
 
 ## Vision
 
@@ -104,7 +104,7 @@ standard 2×2 stereo cassette.
 - Every track is a preallocated, zero-filled 10:00 WAV
 - Side B is the same tape buffer-reversed and with track order swapped 1↔4, 2↔3
 - Storage: 4 × 10 min mono at 48 kHz/16-bit ≈ **230 MB per cassette**
-- Recording only in the forward direction in v1; reverse recording later
+- Reverse recording is supported by flipping and arming the mirrored tracks
 
 ### Flip and routing
 
@@ -117,12 +117,12 @@ When flipped:
 - Pan, volume, mute and solo follow the **deck track strips**
 - Varispeed and tape emulation remain active
 - Metronome and drums are unaffected
-- Recording is disabled while flipped in v1
-- Flipping back restores the original audio, routing and strip order
+- Recording is enabled while flipped; takes are written in Side B time and become reversed on Side A
+- Flipping back exposes the Side A timeline with Side B takes reversed
 
 ### Cassette UI
 
-Shipped through 0.8.0:
+Shipped through 0.8.1:
 
 - Cassette library with create, select and delete; rename/duplicate are planned
 - User-selectable cassette shell colors
@@ -170,7 +170,7 @@ Shipped:
 - Stop and finalize the take when the app is backgrounded
 - Exclude cassette audio and metadata from Android cloud backup and transfer
 - Export a forward 1× stereo mix with deck settings, sends, master FX and tape
-  to WAV or OGG Opus, trimmed to the last take
+  to WAV or OGG Opus across the full 10:00 tape
 - Hand exports to the Android share sheet through `FileProvider`
 - Exclude metronome/drums from exports; MP3 is not offered because Android has
   no dependable system MP3 encoder
@@ -250,6 +250,7 @@ Planned:
 | **0.7.0** | Shipped: per-deck reverb/delay sends, master FX returns, stereo WAV/OGG export and Android sharing |
 | **0.7.1** | Shipped: realistic cassette shell, variable tape packs, hold-to-wind and tape start/end controls |
 | **0.8.0** | Shipped: simultaneous MIC/CLICK/DRUMS/BUS recording, BUS sends, punch-in overwrite, 10-minute preallocated tape and full-buffer side flip |
+| **0.8.1** | Shipped: Side B reverse recording, cassette rename, tuner title contrast and reel rotation fixes |
 | **Next** | Record varispeed, per-track tape, foreground recording, export presets, library polish |
 
 ## 11. Decisions locked

@@ -403,6 +403,7 @@ private fun Header(
                             fontSize = if (isWide) 24.sp else 20.sp,
                             lineHeight = if (isWide) 28.sp else 23.sp,
                         ),
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )

@@ -103,6 +103,7 @@ fun MainScreen(
                 onSelectCassette = playbackViewModel::selectCassette,
                 onCreateCassette = playbackViewModel::createCassette,
                 onDeleteCassette = playbackViewModel::deleteCassette,
+                onRenameCassette = playbackViewModel::renameCassette,
                 onColor = playbackViewModel::setCassetteColor,
                 onArmTrack = playbackViewModel::armTrack,
                 onToggleDeckMute = playbackViewModel::toggleDeckMute,

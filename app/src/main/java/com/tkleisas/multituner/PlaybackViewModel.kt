@@ -489,6 +489,20 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         prepareSelectedTape()
     }
 
+    fun renameCassette(id: String, name: String) {
+        val trimmed = name.trim().take(40)
+        if (trimmed.isEmpty()) return
+        val cassette = cassetteLibrary.cassettes.firstOrNull { it.id == id } ?: return
+        if (cassette.name == trimmed) return
+        cassetteLibrary = cassetteStore.update(
+            cassetteLibrary,
+            cassette.copy(name = trimmed),
+        )
+        _uiState.update {
+            it.copy(cassette = it.cassette.copy(library = cassetteLibrary))
+        }
+    }
+
     fun deleteCassette(id: String) {
         val state = _uiState.value
         if (state.cassette.recording || state.cassette.tapePreparing || state.cassette.flipping) return
@@ -522,9 +536,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     fun armTrack(index: Int) {
         val state = _uiState.value
-        if (index !in 0 until Cassette.TRACKS || state.cassette.flipped ||
-            state.cassette.recording
-        ) {
+        if (index !in 0 until Cassette.TRACKS || state.cassette.recording) {
             return
         }
         val armed = state.cassette.armedTracks
@@ -1194,13 +1206,6 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
         if (state.cassette.winding) endWind()
 
-        if (state.cassette.flipped) {
-            _uiState.update {
-                it.copy(error = "Flip the cassette back to record")
-            }
-            return
-        }
-
         val armed = state.cassette.armedTracks
         if (armed.isEmpty()) {
             _uiState.update {
@@ -1211,7 +1216,13 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
         val cassette = state.cassette.cassette
         val takes = armed.sorted().map { deck ->
-            val finalFile = cassetteStore.trackFile(cassette, deck)
+            val existingPath = cassette.audioTracks[deck].filePath
+            val physicalTrack = Cassette.trackIndexForDeck(
+                deck,
+                state.cassette.flipped,
+            )
+            val finalFile = existingPath?.let(::File)
+                ?: cassetteStore.trackFile(cassette, physicalTrack)
             PendingTake(
                 deck = deck,
                 source = cassette.decks[deck].recordSource,

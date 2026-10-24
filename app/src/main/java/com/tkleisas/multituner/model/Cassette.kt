@@ -64,6 +64,11 @@ data class Cassette(
         const val TAPE_SECONDS = 600L
         const val TAPE_FRAMES = TAPE_SECONDS * SAMPLE_RATE
 
+        fun trackIndexForDeck(deck: Int, flipped: Boolean): Int {
+            require(deck in 0 until TRACKS) { "Invalid deck $deck" }
+            return if (flipped) TRACKS - 1 - deck else deck
+        }
+
         fun empty(id: String, name: String, color: Long): Cassette = Cassette(
             id = id,
             name = name,

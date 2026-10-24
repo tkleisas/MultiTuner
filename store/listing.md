@@ -56,13 +56,14 @@ CASSETTE RECORDER
 - Arm and record takes, then overdub while hearing the existing tracks
 - Volume, constant-power pan, mute and solo on every deck strip
 - Hold rewind/fast-forward (<< / >>) or jump to tape start/end (|< / >|)
-- Flip the cassette to play the same tape backwards with physical 1-4 / 2-3 routing
+- Flip the cassette to reverse the same full-width tracks with mirror routing 1<->4 and 2<->3
+- Record reverse takes on Side B, then flip back to combine them with forward tracks
 - Playback varispeed from 0.5x to 2x; click and drums follow the speed
 - Realistic cassette shell with label, side badge, variable reel tape packs and hardware details
 - Tape emulation with saturation, wow, flutter, hiss, tone and wet/dry mix
 - Reverb and delay master effects with per-deck sends and master returns
 - Adjustable 0-200% record input gain, with live input and tape output meters
-- Export the cassette as a forward 1x stereo mix in WAV or OGG Opus
+- Export the full 10-minute cassette as a forward 1x stereo mix in WAV or OGG Opus
 - Share exports through the Android share sheet to Files, Drive, email or chat
 - Multiple cassettes with selectable shell colours
 - Recordings stay in private app storage on your device
@@ -160,12 +161,15 @@ final result in Play Console.
 
 No test account or login is required.
 
-## Release notes for v0.8.0
+## Release notes for v0.8.1
 
 ```
+- Record on Side B: takes reverse into the Side A timeline when flipped back
+- Side B deck routing mirrors 1<->4 and 2<->3 with armed tracks and sources
+- Rename cassettes from the cassette library
+- Tuner title contrast fixed; reel rotation now matches tape travel
 - 10-minute four-track tape with preallocated, zero-filled track files
-- True Side A/B flip reverses full track buffers and routes 1<->4, 2<->3
-- Playback and the tape counter always run forward; Side B shows decks 4,3,2,1
+- True Side A/B flip reverses full track buffers
 - Record MIC, CLICK, DRUMS or the cassette BUS directly to armed tracks
 - Simultaneous recording with one source per track and per-deck BUS sends
 - Punch-in/punch-out recording with analog-style overwrite
@@ -173,7 +177,6 @@ No test account or login is required.
 - Recording and guides continue while switching between app tabs
 - Metronome and drums no longer start or stop with the cassette transport
 - Tape stops at 10:00; guides stop via their switches, STOP ALL or app background
-- Reversible side flip verified byte-for-byte on device
 - Native YIN pitch detection for guitar, bouzouki, saz, tambouras, oud, laouto and lute
 - 16 KB page size support, R8 optimization and automated JVM/native tests
 - Offline, no ads and no data collection; recordings stay on the device
@@ -216,7 +219,7 @@ An **organization** account does not have this 12-tester requirement.
 - [ ] Set the privacy policy URL
 - [ ] Complete Ads, App access, Content rating, Target audience and Data safety
 - [ ] Confirm target API 36 is reported for the AAB
-- [ ] Upload `MultiTuner-v0.8.0.aab` to Internal testing first
+- [ ] Upload `MultiTuner-v0.8.1.aab` to Internal testing first
 - [ ] Test the Play-signed build on a physical device
 - [ ] Run the pre-launch report
 - [ ] Complete closed testing if required

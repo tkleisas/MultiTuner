@@ -79,6 +79,16 @@ class CassetteTest {
     }
 
     @Test
+    fun sideBTrackIndexMirrorsTheDeckOrder() {
+        assertEquals(3, Cassette.trackIndexForDeck(0, flipped = true))
+        assertEquals(2, Cassette.trackIndexForDeck(1, flipped = true))
+        assertEquals(1, Cassette.trackIndexForDeck(2, flipped = true))
+        assertEquals(0, Cassette.trackIndexForDeck(3, flipped = true))
+        assertEquals(0, Cassette.trackIndexForDeck(0, flipped = false))
+        assertEquals(3, Cassette.trackIndexForDeck(3, flipped = false))
+    }
+
+    @Test
     fun paletteWrapsInBothDirections() {
         assertEquals(CassetteColors.palette[0], CassetteColors.default(0))
         assertEquals(CassetteColors.palette[1], CassetteColors.default(1))

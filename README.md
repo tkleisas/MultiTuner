@@ -71,8 +71,9 @@ master reverb/delay returns, and the WAV/OGG export dialog.
 - **Realistic tape transport** - shell shading, label and side badge, variable
   tape packs on the reels, hold-to-wind `<<`/`>>`, and `|<`/`>|` start/end jumps.
 - **Flip and varispeed** - full-buffer side flip with deck strips routed
-  1↔4 and 2↔3, a forward tape counter, 0.5×–2× playback varispeed with
-  anti-aliased resampling, and a shared click/drum transport that follows the speed.
+  1↔4 and 2↔3, reverse recording on Side B, a forward tape counter, 0.5×–2×
+  playback varispeed with anti-aliased resampling, and a shared click/drum
+  transport that follows the speed.
 - **Tape character and metering** - saturation, wow, flutter, hiss, tone and
   wet/dry mix, plus live record-input and cassette-output level meters.
 - **Master reverb and delay** - two stereo send/return effects with per-deck
@@ -148,7 +149,8 @@ stereo cassette. A cassette holds four mono takes of up to 10 minutes at 48 kHz,
   winding and resumes from the new position on release.
 - **PLAY** resumes from the current position. **FLIP** reverses every full
   10:00 track buffer and routes deck strips 1↔4 and 2↔3. Playback and the counter
-  still run forward. Recording while flipped is disabled.
+  still run forward. Recording on Side B writes reverse takes; flip back to hear
+  them in the Side A mix.
 - The **REC LEVEL** slider sets microphone input gain from 0–200% and applies
   live while recording. The **REC IN** and **TAPE OUT** meters show post-gain
   input and cassette playback levels.
@@ -156,7 +158,7 @@ stereo cassette. A cassette holds four mono takes of up to 10 minutes at 48 kHz,
   **DLY** sends. The **MASTER FX** panel sets reverb return, size and damping,
   plus delay return, time, feedback and tone. Effects sit before the tape stage.
 - **EXPORT** renders a forward 1× stereo mix with deck settings, sends, master
-  FX and tape. It ends at the last take, excludes click/drums, and supports WAV
+  FX and tape. It covers the full 10:00 tape, excludes click/drums, and supports WAV
   or OGG Opus (Android 11+) through the Android share sheet. MP3 encoding is not
   included because Android has no dependable built-in MP3 encoder.
 - Varispeed, tape and FX settings are saved in the profile; takes live under
@@ -531,6 +533,7 @@ The full product plan is in [`docs/DESIGN.md`](docs/DESIGN.md). Current status:
 - **0.7.0** — master reverb/delay sends and stereo WAV/OGG export with sharing
 - **0.7.1** — realistic cassette shell, variable tape packs, hold-to-wind and tape jump controls
 - **0.8.0** — multi-source recording, punch-in overwrite, 10-minute preallocated tape and full-buffer side flip
+- **0.8.1** — Side B recording, cassette rename, tuner contrast and reel direction fixes
 - Later — record varispeed, per-track tape, custom tuning editor, makam presets
 
 ## Contributing

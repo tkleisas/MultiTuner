@@ -34,6 +34,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -91,6 +92,7 @@ fun CassetteScreen(
     onSelectCassette: (String) -> Unit,
     onCreateCassette: () -> Unit,
     onDeleteCassette: (String) -> Unit,
+    onRenameCassette: (String, String) -> Unit,
     onColor: (Long) -> Unit,
     onArmTrack: (Int) -> Unit,
     onToggleDeckMute: (Int) -> Unit,
@@ -135,6 +137,7 @@ fun CassetteScreen(
     val context = LocalContext.current
     var showLibrary by remember { mutableStateOf(false) }
     var showExport by remember { mutableStateOf(false) }
+    var renameTarget by remember { mutableStateOf<Cassette?>(null) }
     var exportFormat by remember { mutableStateOf(CassetteExportFormat.WAV) }
     val oggAvailable = remember { OggOpusEncoder.isAvailable() }
     val hasTakes = state.cassette.cassette.audioTracks.any { it.filePath != null }
@@ -323,7 +326,22 @@ fun CassetteScreen(
             },
             onCreate = onCreateCassette,
             onDelete = onDeleteCassette,
+            onRename = { cassette ->
+                showLibrary = false
+                renameTarget = cassette
+            },
             onDismiss = { showLibrary = false },
+        )
+    }
+
+    renameTarget?.let { cassette ->
+        CassetteRenameDialog(
+            currentName = cassette.name,
+            onRename = { name ->
+                onRenameCassette(cassette.id, name)
+                renameTarget = null
+            },
+            onDismiss = { renameTarget = null },
         )
     }
 
@@ -398,7 +416,7 @@ private fun ExportDialog(
                 Text(
                     text = "Forward 1× stereo mix with deck levels, pan, " +
                         "sends, master FX and tape. Click and drums are not included. " +
-                        "The file ends at the last take.",
+                        "The file covers the full 10:00 tape.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(12.dp))
@@ -732,7 +750,7 @@ private fun CassetteShell(
                             )
                             val reelAngle = angle * (reelRadius / tapeRadius.coerceAtLeast(1f))
                             rotate(
-                                degrees = reelAngle.toFloat(),
+                                degrees = -reelAngle.toFloat(),
                                 pivot = center,
                             ) {
                                 repeat(6) { spoke ->
@@ -931,8 +949,7 @@ private fun Transport(
                 active = state.cassette.recording,
                 color = ErrorRed,
                 onClick = onRecord,
-                enabled = (!state.cassette.flipped || state.cassette.recording) &&
-                    !state.cassette.tapePreparing && !state.cassette.flipping,
+                enabled = !state.cassette.tapePreparing && !state.cassette.flipping,
                 modifier = Modifier.weight(1f),
             )
             TransportButton(
@@ -972,7 +989,7 @@ private fun Transport(
                     "Preparing four zeroed " +
                     formatTapeTime(CassettePlayerTapeSeconds) + " tracks…"
                 state.cassette.flipped ->
-                    "Side B is playback-only. Flip back to record."
+                    "Side B records reversed. Use empty tracks, then flip back to mix."
                 state.cassette.recording ->
                     "REC punches out; STOP ends tape playback."
                 state.cassette.winding -> "Winding tape…"
@@ -1138,14 +1155,12 @@ private fun DeckStrips(
                                 color = if (track.filePath != null) InTuneGreen else MutedText,
                             )
                         }
-                        if (!state.cassette.flipped) {
-                            Chip(
-                                text = if (armed) "ARMED" else "ARM",
-                                active = armed,
-                                onClick = { onArmTrack(deckIndex) },
-                            )
-                            Spacer(Modifier.width(4.dp))
-                        }
+                        Chip(
+                            text = if (armed) "ARMED" else "ARM",
+                            active = armed,
+                            onClick = { onArmTrack(deckIndex) },
+                        )
+                        Spacer(Modifier.width(4.dp))
                         Chip(
                             text = "M",
                             active = deck.muted,
@@ -1214,7 +1229,7 @@ private fun DeckStrips(
                         value = deck.busSend,
                         onValue = { onBusSend(deckIndex, it) },
                     )
-                    if (!state.cassette.flipped && (armed || recording)) {
+                    if (armed || recording) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -1629,6 +1644,7 @@ private fun CassetteLibraryDialog(
     onSelect: (String) -> Unit,
     onCreate: () -> Unit,
     onDelete: (String) -> Unit,
+    onRename: (Cassette) -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -1668,6 +1684,13 @@ private fun CassetteLibraryDialog(
                                         color = MutedText,
                                     )
                                 }
+                                TextButton(onClick = { onRename(cassette) }) {
+                                    Text(
+                                        text = "Rename",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = InTuneGreen,
+                                    )
+                                }
                                 if (library.cassettes.size > 1) {
                                     TextButton(onClick = { onDelete(cassette.id) }) {
                                         Text(
@@ -1695,6 +1718,43 @@ private fun CassetteLibraryDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text("Close")
+            }
+        },
+    )
+}
+
+@Composable
+private fun CassetteRenameDialog(
+    currentName: String,
+    onRename: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember(currentName) { mutableStateOf(currentName) }
+    val trimmed = name.trim()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Rename cassette") },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it.take(40) },
+                label = { Text("Name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onRename(trimmed) },
+                enabled = trimmed.isNotEmpty(),
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
             }
         },
     )

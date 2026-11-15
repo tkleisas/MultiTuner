@@ -11,6 +11,11 @@ enum class InstrumentFamily(val displayName: String) {
     OUD("Oud"),
     LAOUTO("Laouto"),
     LUTE("Lute"),
+    VIOLIN("Violin"),
+    VIOLA("Viola"),
+    CELLO("Cello"),
+    DOUBLE_BASS("Double Bass"),
+    LYRA("Lyra"),
 }
 
 data class TuningString(

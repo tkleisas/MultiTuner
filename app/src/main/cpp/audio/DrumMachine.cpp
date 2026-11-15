@@ -4,6 +4,9 @@ namespace multituner::audio {
 
 void DrumMachine::init(double sampleRate, int maxBlockSize) {
     m_sampleRate = sampleRate > 0.0 ? sampleRate : 48000.0;
+    for (int track = 0; track < kTracks; ++track) {
+        m_trackSteps[track].store(kDefaultSteps, std::memory_order_release);
+    }
     m_synth.init(m_sampleRate, maxBlockSize);
 }
 
@@ -12,29 +15,33 @@ void DrumMachine::reset() {
 }
 
 void DrumMachine::setStep(int track, int step, int level) {
-    if (track < 0 || track >= kTracks || step < 0 || step >= kSteps) return;
-    const uint32_t mask = 3u << (step * 2);
-    const uint32_t value = static_cast<uint32_t>(std::clamp(level, 0, 2)) << (step * 2);
-    uint32_t old = m_pattern[track].load(std::memory_order_acquire);
-    uint32_t updated = 0;
+    if (track < 0 || track >= kTracks || step < 0 || step >= kMaxSteps) return;
+    const uint64_t mask = 3ull << (step * 2);
+    const uint64_t value = static_cast<uint64_t>(std::clamp(level, 0, 2)) << (step * 2);
+    uint64_t old = m_pattern[track].load(std::memory_order_acquire);
+    uint64_t updated = 0;
     do {
         updated = (old & ~mask) | value;
     } while (!m_pattern[track].compare_exchange_weak(
         old, updated, std::memory_order_release, std::memory_order_acquire));
 }
 
-void DrumMachine::setPattern(const uint8_t* levels) {
+void DrumMachine::setPattern(const uint8_t* levels, const uint8_t* lengths) {
     if (levels == nullptr) return;
     for (int track = 0; track < kTracks; ++track) {
-        for (int step = 0; step < kSteps; ++step) {
-            setStep(track, step, levels[track * kSteps + step]);
+        for (int step = 0; step < kMaxSteps; ++step) {
+            setStep(track, step, levels[track * kMaxSteps + step]);
         }
+        const int length = lengths != nullptr
+            ? std::clamp(static_cast<int>(lengths[track]), 1, kMaxSteps)
+            : kDefaultSteps;
+        m_trackSteps[track].store(length, std::memory_order_release);
     }
 }
 
 int DrumMachine::stepLevel(int track, int step) const {
-    if (track < 0 || track >= kTracks || step < 0 || step >= kSteps) return 0;
-    const uint32_t bits = m_pattern[track].load(std::memory_order_acquire);
+    if (track < 0 || track >= kTracks || step < 0 || step >= kMaxSteps) return 0;
+    const uint64_t bits = m_pattern[track].load(std::memory_order_acquire);
     return static_cast<int>((bits >> (step * 2)) & 3u);
 }
 
@@ -50,11 +57,9 @@ int DrumMachine::currentStep(double bpm, int64_t positionInSamples) const {
     if (bpm <= 0.0) return 0;
     const double stepSamples = m_sampleRate * 15.0 / bpm;
     if (stepSamples <= 0.0) return 0;
-    int step = static_cast<int>(std::floor(
+    const int step = static_cast<int>(std::floor(
         static_cast<double>(positionInSamples) / stepSamples));
-    step %= kSteps;
-    if (step < 0) step += kSteps;
-    return step;
+    return std::max(0, step);
 }
 
 void DrumMachine::process(float* outL, float* outR, int numFrames, double bpm,
@@ -75,6 +80,10 @@ void DrumMachine::process(float* outL, float* outR, int numFrames, double bpm,
     const float volume = m_volume.load(std::memory_order_acquire);
     const double oddDelay = stepSamples * swing;
     const int64_t bufferEnd = positionInSamples + numFrames;
+    int trackSteps[kTracks];
+    for (int track = 0; track < kTracks; ++track) {
+        trackSteps[track] = m_trackSteps[track].load(std::memory_order_acquire);
+    }
 
     int firstStep = static_cast<int>(
         std::floor(static_cast<double>(positionInSamples) / stepSamples)) - 1;
@@ -94,9 +103,10 @@ void DrumMachine::process(float* outL, float* outR, int numFrames, double bpm,
             cursor = frame;
         }
 
-        int patternStep = step % kSteps;
-        if (patternStep < 0) patternStep += kSteps;
         for (int track = 0; track < kTracks; ++track) {
+            const int length = trackSteps[track];
+            int patternStep = step % length;
+            if (patternStep < 0) patternStep += length;
             const int level = stepLevel(track, patternStep);
             if (level <= 0) continue;
             const float velocity = (level == 2 ? 1.0f : 0.7f) * volume;

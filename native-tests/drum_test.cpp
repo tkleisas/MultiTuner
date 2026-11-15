@@ -110,7 +110,19 @@ void testDrumMachine() {
     check(counter.currentStep(bpm, 0) == 0, "current step at zero");
     check(counter.currentStep(bpm, 6000) == 1, "current step after one step");
     check(counter.currentStep(bpm, 24000) == 4, "current step after four steps");
-    check(counter.currentStep(bpm, 96000) == 0, "current step wraps after one bar");
+    check(counter.currentStep(bpm, 96000) == 16, "current step continues past 16");
+
+    DrumMachine poly;
+    poly.init(48000.0, 1024);
+    std::vector<uint8_t> levels(DrumMachine::kTracks * DrumMachine::kMaxSteps, 0);
+    std::vector<uint8_t> lengths(DrumMachine::kTracks, DrumMachine::kDefaultSteps);
+    levels[DrumSynth::Kick] = 1;
+    lengths[0] = 3;
+    poly.setPattern(levels.data(), lengths.data());
+    std::fill(left.begin(), left.end(), 0.0f);
+    std::fill(right.begin(), right.end(), 0.0f);
+    poly.process(left.data(), right.data(), 1024, bpm, 36000, true);
+    check(peak(left, right) > 0.0, "three-step lane loops independently");
 }
 } // namespace
 

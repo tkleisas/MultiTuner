@@ -24,7 +24,7 @@ Tuner, metronome, drums and 4-track cassette recorder for strings.
 ```
 MultiTuner is a fast, offline tuner, metronome, drum machine and four-track cassette recorder for stringed instruments. It shows a large note readout, a cents needle, an animated strobe and live feedback for every string or course in the selected tuning.
 
-Built for guitar, Greek bouzouki, saz, tambouras, oud, laouto and Renaissance lute:
+Built for guitar, violin, viola, cello, double bass, Greek bouzouki, saz, tambouras, oud, laouto, Renaissance lute and Cretan/Pontic lyres:
 
 Guitar: Standard E, Drop D, Eb Standard, D Standard, Drop C, C Standard, DADGAD, Open G, Open D, Open E, Baritone B and 7-string Standard.
 Bouzouki: 4-course C-F-A-D and D-G-B-E; 3-course D-A-D and D-G-D.
@@ -33,6 +33,11 @@ Tambouras: D-G-C (default), D-A-D and D-A.
 Oud: Arabic/Greek C-F-A-D-G-C, Arabic D-G-A-D-G-C, F-A-D-G-C-F and Turkish Bolahenk.
 Laouto: mainland C-G-D-A and Cretan G-D-A-E, including octave-pair courses.
 Lute: Renaissance 6-, 8- and 10-course tenor lute in G.
+Violin: standard G-D-A-E.
+Viola: standard C-G-D-A.
+Cello: standard C-G-D-A.
+Double bass: orchestral E-A-D-G and solo F#-B-E-A.
+Lyra: Cretan G-D-A (three-string) or G-D-A-E (four-string); Pontic B-E-A or E-A-D.
 
 HOW IT WORKS
 Play one string at a time. MultiTuner detects the pitch with a native YIN detector, finds the nearest string or course, and shows how many cents you are away from the target. Tap a course chip to lock the tuner to that course when you want to focus on a single string. The needle, strobe and colour feedback make it easy to see when you are in tune.
@@ -46,7 +51,7 @@ METRONOME
 
 DRUMS
 - 8-track synthesized drum kit
-- 16-step sequencer with normal and accent steps
+- 1–32 step sequencer with a common length or independent per-lane loop lengths, normal and accent steps
 - Rock, Funk, House, Break and Empty patterns
 - Swing, drum volume and optional metronome click
 - Drums and click share one transport and can run together
@@ -161,25 +166,20 @@ final result in Play Console.
 
 No test account or login is required.
 
-## Release notes for v0.8.1
+## Release notes for v0.9.0
 
 ```
-- Record on Side B: takes reverse into the Side A timeline when flipped back
-- Side B deck routing mirrors 1<->4 and 2<->3 with armed tracks and sources
-- Rename cassettes from the cassette library
-- Tuner title contrast fixed; reel rotation now matches tape travel
+- Violin, viola, cello, double bass and Cretan/Pontic lyre tunings
+- 41 tuner presets across 12 instrument families
+- Drum sequencer now supports common or independent 1–32 step lane lengths
+- Per-lane length controls and independent loop playheads for polyrhythms
+- Side B reverse recording and cassette renaming from v0.8.1
 - 10-minute four-track tape with preallocated, zero-filled track files
-- True Side A/B flip reverses full track buffers
-- Record MIC, CLICK, DRUMS or the cassette BUS directly to armed tracks
-- Simultaneous recording with one source per track and per-deck BUS sends
-- Punch-in/punch-out recording with analog-style overwrite
-- REC toggles recording; separate PLAY, STOP and FLIP controls; STOP ALL
-- Recording and guides continue while switching between app tabs
-- Metronome and drums no longer start or stop with the cassette transport
-- Tape stops at 10:00; guides stop via their switches, STOP ALL or app background
-- Native YIN pitch detection for guitar, bouzouki, saz, tambouras, oud, laouto and lute
+- True Side A/B buffer flip with mirrored deck routing
+- Record MIC, CLICK, DRUMS or BUS to armed tracks; punch-in overwrite and BUS sends
+- Separate REC, PLAY, STOP and FLIP controls; STOP ALL; tab-independent transport
+- Native YIN pitch detection and offline, private recording
 - 16 KB page size support, R8 optimization and automated JVM/native tests
-- Offline, no ads and no data collection; recordings stay on the device
 ```
 
 ## Signing notes
@@ -219,7 +219,7 @@ An **organization** account does not have this 12-tester requirement.
 - [ ] Set the privacy policy URL
 - [ ] Complete Ads, App access, Content rating, Target audience and Data safety
 - [ ] Confirm target API 36 is reported for the AAB
-- [ ] Upload `MultiTuner-v0.8.1.aab` to Internal testing first
+- [ ] Upload `MultiTuner-v0.9.0.aab` to Internal testing first
 - [ ] Test the Play-signed build on a physical device
 - [ ] Run the pre-launch report
 - [ ] Complete closed testing if required

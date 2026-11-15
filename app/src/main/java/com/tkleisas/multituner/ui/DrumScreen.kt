@@ -55,6 +55,9 @@ fun DrumScreen(
     onBpm: (Int) -> Unit,
     onToggleDrums: () -> Unit,
     onCycleStep: (Int, Int) -> Unit,
+    onTrackLength: (Int, Int) -> Unit,
+    onIndependentLengths: (Boolean) -> Unit,
+    onCommonLength: (Int) -> Unit,
     onSelectPreset: (String) -> Unit,
     onSwing: (Float) -> Unit,
     onDrumVolume: (Float) -> Unit,
@@ -86,6 +89,9 @@ fun DrumScreen(
                     state = state,
                     onSelectPreset = onSelectPreset,
                     onCycleStep = onCycleStep,
+                    onTrackLength = onTrackLength,
+                    onIndependentLengths = onIndependentLengths,
+                    onCommonLength = onCommonLength,
                 )
                 Spacer(Modifier.height(12.dp))
                 SettingsPanel(
@@ -253,6 +259,9 @@ private fun PatternPanel(
     state: PlaybackUiState,
     onSelectPreset: (String) -> Unit,
     onCycleStep: (Int, Int) -> Unit,
+    onTrackLength: (Int, Int) -> Unit,
+    onIndependentLengths: (Boolean) -> Unit,
+    onCommonLength: (Int) -> Unit,
 ) {
     Surface(
         shape = RoundedCornerShape(20.dp),
@@ -277,14 +286,25 @@ private fun PatternPanel(
                 }
                 Spacer(Modifier.weight(1f))
                 if (state.drumsPlaying) {
+                    val commonLength = state.drumPattern.effectiveLengths()
+                        .distinct()
+                        .singleOrNull()
                     Text(
-                        text = "STEP ${state.currentDrumStep + 1}/16",
+                        text = if (commonLength != null) {
+                            "STEP ${state.currentDrumStep % commonLength + 1}/$commonLength"
+                        } else {
+                            "POLYRHYTHM · per-lane steps"
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = InTuneGreen,
                     )
                 } else {
                     Text(
-                        text = "tap: off → normal → accent",
+                        text = if (state.drumPattern.independentLengths) {
+                            "tap steps · set lane length 1–32"
+                        } else {
+                            "tap steps · common length 1–32"
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = MutedText,
                     )
@@ -303,8 +323,51 @@ private fun PatternPanel(
                     )
                 }
             }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "INDEPENDENT LANE LENGTHS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = if (state.drumPattern.independentLengths) {
+                            "Each lane loops at its own length"
+                        } else {
+                            "All lanes share one length"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MutedText,
+                    )
+                }
+                Switch(
+                    checked = state.drumPattern.independentLengths,
+                    onCheckedChange = onIndependentLengths,
+                )
+            }
+            if (!state.drumPattern.independentLengths) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "COMMON LENGTH",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MutedText,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    TrackLengthControl(
+                        length = state.drumPattern.commonLength,
+                        onChange = onCommonLength,
+                    )
+                }
+            }
             Spacer(Modifier.height(10.dp))
-            StepGrid(state, onCycleStep)
+            StepGrid(state, onCycleStep, onTrackLength)
         }
     }
 }
@@ -313,26 +376,58 @@ private fun PatternPanel(
 private fun StepGrid(
     state: PlaybackUiState,
     onCycleStep: (Int, Int) -> Unit,
+    onTrackLength: (Int, Int) -> Unit,
 ) {
     val cellSize = 22.dp
     val spacing = 3.dp
     val headerHeight = 17.dp
+    val independent = state.drumPattern.independentLengths
+    val labelWidth = if (independent) 108.dp else 78.dp
     val horizontalScroll = rememberScrollState()
 
     Row(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.width(62.dp)) {
-            Spacer(Modifier.height(headerHeight + spacing))
-            drumTrackLabels.forEach { label ->
-                Box(
-                    modifier = Modifier.height(cellSize + spacing),
-                    contentAlignment = Alignment.CenterStart,
+        Column(modifier = Modifier.width(labelWidth)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(headerHeight + spacing),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "TRACK",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                    color = MutedText,
+                )
+                Spacer(Modifier.weight(1f))
+                if (independent) {
+                    Text(
+                        text = "LEN",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                        color = MutedText,
+                    )
+                    Spacer(Modifier.width(4.dp))
+                }
+            }
+            drumTrackLabels.forEachIndexed { track, label ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(cellSize + spacing),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = label,
-                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                         color = MutedText,
                         maxLines = 1,
                     )
+                    if (independent) {
+                        TrackLengthControl(
+                            length = state.drumPattern.length(track),
+                            onChange = { length -> onTrackLength(track, length) },
+                        )
+                    }
                 }
             }
         }
@@ -343,8 +438,7 @@ private fun StepGrid(
                 .horizontalScroll(horizontalScroll),
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
-                repeat(DrumPattern.STEPS) { step ->
-                    val current = state.drumsPlaying && state.currentDrumStep == step
+                repeat(DrumPattern.MAX_STEPS) { step ->
                     Box(
                         modifier = Modifier
                             .width(cellSize)
@@ -354,7 +448,7 @@ private fun StepGrid(
                         Text(
                             text = (step + 1).toString(),
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                            color = if (current) InTuneGreen else MutedText,
+                            color = MutedText,
                         )
                     }
                 }
@@ -362,13 +456,18 @@ private fun StepGrid(
             Spacer(Modifier.height(spacing))
 
             repeat(DrumPattern.TRACKS) { track ->
+                val trackLength = state.drumPattern.length(track)
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
-                    repeat(DrumPattern.STEPS) { step ->
+                    repeat(DrumPattern.MAX_STEPS) { step ->
+                        val active = step < trackLength
                         val level = state.drumPattern.level(track, step)
-                        val current = state.drumsPlaying && state.currentDrumStep == step
-                        val color = when (level) {
-                            2 -> WarnYellow.copy(alpha = 0.9f)
-                            1 -> InTuneGreen.copy(alpha = 0.55f)
+                        val current = state.drumsPlaying && active &&
+                            trackLength > 0 &&
+                            state.currentDrumStep % trackLength == step
+                        val color = when {
+                            !active -> PanelBorder.copy(alpha = 0.10f)
+                            level == 2 -> WarnYellow.copy(alpha = 0.9f)
+                            level == 1 -> InTuneGreen.copy(alpha = 0.55f)
                             else -> PanelBorder.copy(alpha = 0.35f)
                         }
                         Box(
@@ -387,13 +486,58 @@ private fun StepGrid(
                                         Modifier
                                     },
                                 )
-                                .clickable { onCycleStep(track, step) },
+                                .clickable(enabled = active) {
+                                    onCycleStep(track, step)
+                                },
                         )
                     }
                 }
                 Spacer(Modifier.height(spacing))
             }
         }
+    }
+}
+
+@Composable
+private fun TrackLengthControl(
+    length: Int,
+    onChange: (Int) -> Unit,
+) {
+    val canDecrease = length > 1
+    val canIncrease = length < DrumPattern.MAX_STEPS
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = "−",
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontFamily = FontFamily.Monospace,
+                fontSize = 12.sp,
+            ),
+            color = if (canDecrease) InTuneGreen else MutedText.copy(alpha = 0.35f),
+            modifier = Modifier
+                .clickable(enabled = canDecrease) { onChange(length - 1) }
+                .padding(horizontal = 3.dp),
+        )
+        Text(
+            text = length.toString(),
+            modifier = Modifier.width(18.dp),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontFamily = FontFamily.Monospace,
+                fontSize = 10.sp,
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = "+",
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontFamily = FontFamily.Monospace,
+                fontSize = 12.sp,
+            ),
+            color = if (canIncrease) InTuneGreen else MutedText.copy(alpha = 0.35f),
+            modifier = Modifier
+                .clickable(enabled = canIncrease) { onChange(length + 1) }
+                .padding(horizontal = 3.dp),
+        )
     }
 }
 

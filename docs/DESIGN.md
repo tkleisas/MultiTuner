@@ -1,6 +1,6 @@
 # MultiTuner — Product Design and Roadmap
 
-Status: living document. v0.8.1 Side B recording and cassette polish.
+Status: living document. v0.9.0 bowed-string tunings and per-lane drum lengths.
 
 ## Vision
 
@@ -50,6 +50,8 @@ known families. Tests parse the real catalog and invalid fixture data.
 - **Lute**: Renaissance 6-, 8- and 10-course tenor lute in G; octave pairs where
   historically used
 - Existing: guitar, bouzouki, saz, tambouras
+- **Orchestral strings**: violin G-D-A-E, viola C-G-D-A, cello C-G-D-A, double bass orchestral E-A-D-G and solo F#-B-E-A
+- **Lyres**: Cretan three-string G-D-A and four-string G-D-A-E; Pontic B-E-A and E-A-D
 
 Microtonal support is implemented through per-string cents offsets and optional
 labels. Verified makam/maqam presets can be added without code changes.
@@ -84,6 +86,7 @@ labels. Verified makam/maqam presets can be added without code changes.
 ## 4. Drums
 
 - Shipped in 0.3.0: 8-track synthesized kit, 16-step grid, normal/accent steps,
+- Current grid supports a common 1–32 step length or independent per-lane loops,
   Rock/Funk/House/Break presets, swing, drum volume and a shared transport with
   the metronome.
 - Built-in synthesized kit adapted from yawn's `DrumSynth`.
@@ -122,7 +125,7 @@ When flipped:
 
 ### Cassette UI
 
-Shipped through 0.8.1:
+Shipped through 0.9.0:
 
 - Cassette library with create, select and delete; rename/duplicate are planned
 - User-selectable cassette shell colors
@@ -251,6 +254,7 @@ Planned:
 | **0.7.1** | Shipped: realistic cassette shell, variable tape packs, hold-to-wind and tape start/end controls |
 | **0.8.0** | Shipped: simultaneous MIC/CLICK/DRUMS/BUS recording, BUS sends, punch-in overwrite, 10-minute preallocated tape and full-buffer side flip |
 | **0.8.1** | Shipped: Side B reverse recording, cassette rename, tuner title contrast and reel rotation fixes |
+| **0.9.0** | Shipped: violin, viola, cello, double bass and lyre presets; common or independent 1–32 step drum lanes; AEC research notes |
 | **Next** | Record varispeed, per-track tape, foreground recording, export presets, library polish |
 
 ## 11. Decisions locked

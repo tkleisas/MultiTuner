@@ -111,14 +111,22 @@ Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDrumStep(
 
 JNIEXPORT void JNICALL
 Java_com_tkleisas_multituner_audio_MetronomeNative_nativeSetDrumPattern(
-    JNIEnv* env, jobject, jlong handle, jbyteArray levels) {
+    JNIEnv* env, jobject, jlong handle, jbyteArray levels, jbyteArray lengths) {
     auto* engine = fromHandle(handle);
     if (engine == nullptr || levels == nullptr) return;
-    const jsize count = std::min<jsize>(128, env->GetArrayLength(levels));
-    std::vector<uint8_t> data(128, 0);
+    const jsize levelCount = std::min<jsize>(256, env->GetArrayLength(levels));
+    std::vector<uint8_t> data(256, 0);
     env->GetByteArrayRegion(
-        levels, 0, count, reinterpret_cast<jbyte*>(data.data()));
-    engine->setDrumPattern(data.data());
+        levels, 0, levelCount, reinterpret_cast<jbyte*>(data.data()));
+
+    std::vector<uint8_t> trackLengths(8, 16);
+    if (lengths != nullptr) {
+        const jsize lengthCount = std::min<jsize>(8, env->GetArrayLength(lengths));
+        env->GetByteArrayRegion(
+            lengths, 0, lengthCount,
+            reinterpret_cast<jbyte*>(trackLengths.data()));
+    }
+    engine->setDrumPattern(data.data(), trackLengths.data());
 }
 
 JNIEXPORT void JNICALL

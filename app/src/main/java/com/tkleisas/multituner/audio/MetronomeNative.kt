@@ -23,7 +23,7 @@ internal object MetronomeNative {
     external fun nativeCurrentDrumStep(handle: Long): Int
     external fun nativeSampleRate(handle: Long): Int
     external fun nativeSetDrumStep(handle: Long, track: Int, step: Int, level: Int)
-    external fun nativeSetDrumPattern(handle: Long, levels: ByteArray)
+    external fun nativeSetDrumPattern(handle: Long, levels: ByteArray, lengths: ByteArray)
     external fun nativeSetDrumSwing(handle: Long, swing: Float)
     external fun nativeSetDrumVolume(handle: Long, volume: Float)
     external fun nativeSetCassettePlaying(handle: Long, playing: Boolean)

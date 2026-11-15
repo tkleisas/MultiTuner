@@ -53,8 +53,8 @@ internal class MetronomeAudioEngine : AutoCloseable {
         }
     }
 
-    fun setDrumPattern(levels: ByteArray) {
-        if (handle != 0L) MetronomeNative.nativeSetDrumPattern(handle, levels)
+    fun setDrumPattern(levels: ByteArray, lengths: ByteArray) {
+        if (handle != 0L) MetronomeNative.nativeSetDrumPattern(handle, levels, lengths)
     }
 
     fun setDrumSwing(swing: Float) {

@@ -87,11 +87,61 @@ class TuningLibraryTest {
         assertEquals(4, TuningLibrary.forFamily(InstrumentFamily.OUD).size)
         assertEquals(2, TuningLibrary.forFamily(InstrumentFamily.LAOUTO).size)
         assertEquals(3, TuningLibrary.forFamily(InstrumentFamily.LUTE).size)
+        assertEquals(1, TuningLibrary.forFamily(InstrumentFamily.VIOLIN).size)
+        assertEquals(1, TuningLibrary.forFamily(InstrumentFamily.VIOLA).size)
+        assertEquals(1, TuningLibrary.forFamily(InstrumentFamily.CELLO).size)
+        assertEquals(2, TuningLibrary.forFamily(InstrumentFamily.DOUBLE_BASS).size)
+        assertEquals(4, TuningLibrary.forFamily(InstrumentFamily.LYRA).size)
     }
 
     @Test
     fun catalogContainsAllPresets() {
-        assertEquals(32, TuningLibrary.all.size)
+        assertEquals(41, TuningLibrary.all.size)
+    }
+
+    @Test
+    fun bowedStringTuningsHaveExpectedNotes() {
+        assertEquals(
+            listOf(55, 62, 69, 76),
+            TuningLibrary.byId("violin_standard").courses.map { it.strings.first().midi },
+        )
+        assertEquals(
+            listOf(48, 55, 62, 69),
+            TuningLibrary.byId("viola_standard").courses.map { it.strings.first().midi },
+        )
+        assertEquals(
+            listOf(36, 43, 50, 57),
+            TuningLibrary.byId("cello_standard").courses.map { it.strings.first().midi },
+        )
+        assertEquals(
+            listOf(28, 33, 38, 43),
+            TuningLibrary.byId("double_bass_orchestral")
+                .courses.map { it.strings.first().midi },
+        )
+        assertEquals(
+            listOf(30, 35, 40, 45),
+            TuningLibrary.byId("double_bass_solo").courses.map { it.strings.first().midi },
+        )
+    }
+
+    @Test
+    fun lyreTuningsHaveExpectedNotes() {
+        assertEquals(
+            listOf(55, 62, 69),
+            TuningLibrary.byId("cretan_lyra_3").courses.map { it.strings.first().midi },
+        )
+        assertEquals(
+            listOf(55, 62, 69, 76),
+            TuningLibrary.byId("cretan_lyra_4").courses.map { it.strings.first().midi },
+        )
+        assertEquals(
+            listOf(59, 64, 69),
+            TuningLibrary.byId("pontic_lyra_bea").courses.map { it.strings.first().midi },
+        )
+        assertEquals(
+            listOf(64, 69, 74),
+            TuningLibrary.byId("pontic_lyra_ead").courses.map { it.strings.first().midi },
+        )
     }
 
     @Test

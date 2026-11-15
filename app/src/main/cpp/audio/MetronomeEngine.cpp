@@ -315,8 +315,9 @@ void MetronomeEngine::setDrumStep(int track, int step, int level) {
     mDrums.setStep(track, step, level);
 }
 
-void MetronomeEngine::setDrumPattern(const uint8_t* levels) {
-    mDrums.setPattern(levels);
+void MetronomeEngine::setDrumPattern(const uint8_t* levels,
+                                     const uint8_t* lengths) {
+    mDrums.setPattern(levels, lengths);
 }
 
 void MetronomeEngine::setDrumSwing(float swing) {

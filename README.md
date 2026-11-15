@@ -8,15 +8,17 @@ MultiTuner is a fast, offline Android tuner, metronome, drum machine and
 four-track cassette recorder for stringed instruments. It is built around a
 native C++ YIN pitch detector and a shared Oboe audio engine.
 
-The tuner ships with presets for guitar, Greek bouzouki (3- and 4-course), saz,
-tambouras, oud, laouto and Renaissance lute. Metronome, drums and cassette share
+The tuner ships with presets for guitar, violin, viola, cello, double bass,
+Greek bouzouki (3- and 4-course), saz, tambouras, oud, laouto, Renaissance lute,
+and Cretan and Pontic lyres. Metronome, drums and cassette share
 the same transport. The cassette is a full-width four-track, 10-minute tape with
 side flip, constant-power pan, 0.5×–2× varispeed and tape
 emulation. It targets Android 10 and newer and is designed for both phones and
 tablets.
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for the product design, cassette recorder
-spec and full roadmap.
+spec and full roadmap. The acoustic echo cancellation research is documented in
+[`docs/AEC-INVESTIGATION.md`](docs/AEC-INVESTIGATION.md).
 
 ## Screenshots
 
@@ -63,8 +65,9 @@ master reverb/delay returns, and the WAV/OGG export dialog.
   needle gauge, animated strobe band, input level meter and an `IN TUNE` state.
 - **Metronome** - 30–300 BPM, tap tempo, beats per bar, subdivisions, accent
   and volume, with sample-accurate audio.
-- **Drum machine** - 8 synthesized tracks, 16-step sequencer, normal/accent
-  steps, Rock/Funk/House/Break presets, swing and drum volume.
+- **Drum machine** - 8 synthesized tracks with a common 1–32 step grid or
+  independent lane lengths, normal/accent steps, Rock/Funk/House/Break presets,
+  swing and drum volume.
 - **Four-track cassette recorder** - 10-minute full-width tape, four mono takes,
   arm/record, constant-power pan, volume, mute/solo, hold-to-wind transport and
   cassette library with shell colours.
@@ -83,7 +86,7 @@ master reverb/delay returns, and the WAV/OGG export dialog.
 - **Shared transport** - metronome, drums and cassette can run together on the
   same transport.
 - **Reference pitch** - adjustable A4 reference from 415 Hz to 466 Hz.
-- **Instrument presets** - guitar, bouzouki, saz, tambouras, oud, laouto and Renaissance lute.
+- **Instrument presets** - guitar, violin, viola, cello, double bass, bouzouki, saz, tambouras, oud, laouto, Renaissance lute and Cretan/Pontic lyres.
 - **Phone and tablet navigation** - bottom navigation on phones and a
   navigation rail on wide screens.
 - **Profile persistence** - the selected tuning, course lock and reference pitch
@@ -107,6 +110,11 @@ master reverb/delay returns, and the WAV/OGG export dialog.
 | Oud | Arabic/Greek C-F-A-D-G-C, Arabic D-G-A-D-G-C, Arabic F-A-D-G-C-F, Turkish Bolahenk |
 | Laouto | Mainland C-G-D-A, Cretan G-D-A-E, with octave-pair courses |
 | Lute | Renaissance 6-, 8- and 10-course tenor lute in G |
+| Violin | Standard G-D-A-E |
+| Viola | Standard C-G-D-A |
+| Cello | Standard C-G-D-A, one octave below viola |
+| Double Bass | Orchestral E-A-D-G, solo F#-B-E-A |
+| Lyra | Cretan 3-string G-D-A, Cretan 4-string G-D-A-E, Pontic B-E-A, Pontic E-A-D |
 
 Course notes are shown low to high unless the tuning is intentionally
 re-entrant. The bouzouki C-F-A-D preset includes the octave pairs on the C and F
@@ -115,6 +123,11 @@ courses.
 Saz tuning names and octaves vary by instrument size and region. Both low-A and
 high-A variants are included for Bozuk and Bağlama; use the one that matches your
 instrument.
+
+Double bass solo tuning is written F#-B-E-A. Cretan lyra presets cover the
+modern three-string and four-string instruments. Pontic lyra presets include the
+common B-E-A setup and the Turkish E-A-D (kemençe) setup; regional karar pitch
+may vary.
 
 Presets are data-driven and live in
 [`app/src/main/resources/tunings.json`](app/src/main/resources/tunings.json).
@@ -474,7 +487,7 @@ Store version. Uninstall the sideloaded app before installing from Play.
 │   ├── src/main/resources/ # Data-driven tuning catalog
 │   ├── src/test/           # JVM unit tests
 │   └── build.gradle.kts
-├── docs/                   # Design/roadmap, landing page, privacy policy, screenshots
+├── docs/                   # Design/roadmap, AEC research, landing page, privacy policy, screenshots
 ├── store/                  # Play Store listing copy and graphics
 ├── native-tests/           # Host-side DSP, metronome and drum tests
 ├── scripts/                # Release verification (16 KB page sizes)
@@ -534,6 +547,7 @@ The full product plan is in [`docs/DESIGN.md`](docs/DESIGN.md). Current status:
 - **0.7.1** — realistic cassette shell, variable tape packs, hold-to-wind and tape jump controls
 - **0.8.0** — multi-source recording, punch-in overwrite, 10-minute preallocated tape and full-buffer side flip
 - **0.8.1** — Side B recording, cassette rename, tuner contrast and reel direction fixes
+- **0.9.0** — violin, viola, cello, double bass and lyre tunings; independent 1–32 step drum lanes
 - Later — record varispeed, per-track tape, custom tuning editor, makam presets
 
 ## Contributing

@@ -1670,6 +1670,351 @@
           ]
         }
       ]
+    },
+    {
+      "id": "violin_standard",
+      "name": "Violin Standard",
+      "family": "VIOLIN",
+      "description": "G3 · D4 · A4 · E5. Standard orchestral violin in fifths.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 69
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 76
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "viola_standard",
+      "name": "Viola Standard",
+      "family": "VIOLA",
+      "description": "C3 · G3 · D4 · A4. Standard orchestral viola in fifths.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 48
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 69
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cello_standard",
+      "name": "Cello Standard",
+      "family": "CELLO",
+      "description": "C2 · G2 · D3 · A3. Standard orchestral cello in fifths.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 36
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 43
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 50
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 57
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "double_bass_orchestral",
+      "name": "Double Bass Orchestral",
+      "family": "DOUBLE_BASS",
+      "description": "E1 · A1 · D2 · G2. Standard orchestral double bass in fourths.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 28
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 33
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 38
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 43
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "double_bass_solo",
+      "name": "Double Bass Solo",
+      "family": "DOUBLE_BASS",
+      "description": "F#1 · B1 · E2 · A2. Solo double bass tuning, a tone above orchestral.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 30
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 35
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 40
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cretan_lyra_3",
+      "name": "Cretan Lyra 3-string",
+      "family": "LYRA",
+      "description": "G3 · D4 · A4. Modern three-string Cretan lyra in fifths.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 69
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cretan_lyra_4",
+      "name": "Cretan Lyra 4-string",
+      "family": "LYRA",
+      "description": "G3 · D4 · A4 · E5. Four-string Cretan lyra adding the high E.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "4",
+          "strings": [
+            {
+              "midi": 55
+            }
+          ]
+        },
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 62
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 69
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 76
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pontic_lyra_bea",
+      "name": "Pontic Lyra B-E-A",
+      "family": "LYRA",
+      "description": "B3 · E4 · A4. Common Pontic lyra tuning in perfect fourths.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 59
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 64
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 69
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pontic_lyra_ead",
+      "name": "Pontic Lyra E-A-D",
+      "family": "LYRA",
+      "description": "E4 · A4 · D5. Common Black Sea kemençe tuning in perfect fourths.",
+      "preferFlats": false,
+      "courses": [
+        {
+          "label": "3",
+          "strings": [
+            {
+              "midi": 64
+            }
+          ]
+        },
+        {
+          "label": "2",
+          "strings": [
+            {
+              "midi": 69
+            }
+          ]
+        },
+        {
+          "label": "1",
+          "strings": [
+            {
+              "midi": 74
+            }
+          ]
+        }
+      ]
     }
   ]
 }

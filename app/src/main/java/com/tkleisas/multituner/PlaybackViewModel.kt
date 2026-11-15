@@ -433,6 +433,57 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         engine?.setDrumStep(track, step, updated.level(track, step))
     }
 
+    fun setDrumTrackLength(track: Int, length: Int) {
+        val state = _uiState.value
+        val updated = state.drumPattern.withTrackLength(track, length)
+        if (updated == state.drumPattern) return
+        prefs.edit()
+            .putString(KEY_DRUM_PATTERN, updated.encode())
+            .putString(KEY_DRUM_PRESET, "custom")
+            .apply()
+        _uiState.update {
+            it.copy(drumPattern = updated, drumPresetId = "custom")
+        }
+        engine?.setDrumPattern(
+            updated.toNativeLevels(),
+            updated.toNativeLengths(),
+        )
+    }
+
+    fun setDrumIndependentLengths(enabled: Boolean) {
+        val state = _uiState.value
+        val updated = state.drumPattern.withIndependentLengths(enabled)
+        if (updated == state.drumPattern) return
+        prefs.edit()
+            .putString(KEY_DRUM_PATTERN, updated.encode())
+            .putString(KEY_DRUM_PRESET, "custom")
+            .apply()
+        _uiState.update {
+            it.copy(drumPattern = updated, drumPresetId = "custom")
+        }
+        engine?.setDrumPattern(
+            updated.toNativeLevels(),
+            updated.toNativeLengths(),
+        )
+    }
+
+    fun setDrumCommonLength(length: Int) {
+        val state = _uiState.value
+        val updated = state.drumPattern.withCommonLength(length)
+        if (updated == state.drumPattern) return
+        prefs.edit()
+            .putString(KEY_DRUM_PATTERN, updated.encode())
+            .putString(KEY_DRUM_PRESET, "custom")
+            .apply()
+        _uiState.update {
+            it.copy(drumPattern = updated, drumPresetId = "custom")
+        }
+        engine?.setDrumPattern(
+            updated.toNativeLevels(),
+            updated.toNativeLengths(),
+        )
+    }
+
     fun selectDrumPreset(id: String) {
         val preset = DrumPatterns.byId(id) ?: return
         prefs.edit()
@@ -442,7 +493,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.copy(drumPattern = preset.pattern, drumPresetId = preset.id)
         }
-        engine?.setDrumPattern(preset.pattern.toNativeLevels())
+        engine?.setDrumPattern(
+            preset.pattern.toNativeLevels(),
+            preset.pattern.toNativeLengths(),
+        )
     }
 
     fun selectCassette(id: String) {
@@ -1599,7 +1653,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         audio.setSubdivision(state.subdivision)
         audio.setVolume(state.volume)
         audio.setAccentEnabled(state.accent)
-        audio.setDrumPattern(state.drumPattern.toNativeLevels())
+        audio.setDrumPattern(
+            state.drumPattern.toNativeLevels(),
+            state.drumPattern.toNativeLengths(),
+        )
         audio.setDrumSwing(state.swing)
         audio.setDrumVolume(state.drumVolume)
     }

@@ -80,7 +80,7 @@ public:
     bool internalRecordingFailed(int source) const;
 
     void setDrumStep(int track, int step, int level);
-    void setDrumPattern(const uint8_t* levels);
+    void setDrumPattern(const uint8_t* levels, const uint8_t* lengths);
     void setDrumSwing(float swing);
     void setDrumVolume(float volume);
 
